@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Any
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -21,8 +21,10 @@ from models import (
 import agents.chat as chat_agent
 import agents.jobs as jobs_agent
 import agents.voice as voice_agent
+import agents.enhanced_voice as enhanced_voice_agent
 import agents.attendance as attendance_agent
 import agents.finance as finance_agent
+import agents.ai_agent as ai_agent_module
 import synthetic_data
 
 load_dotenv()
@@ -371,18 +373,119 @@ def jobs_recommend(authorization: str = Header(None)):
 
 
 @app.post("/agent/voice/command")
-def voice_command(request: VoiceRequest, authorization: str = Header(None)):
-  try:
-    _ = get_current_user(authorization)
-    result = voice_agent.parse_voice_command(request.text)
-    return result
-  except Exception as e:
-    # Return a default response even if there's an error
-    return {
-      "action": "unknown",
-      "params": {},
-      "response": f"I encountered an error processing your command. Please try again. Error: {str(e)}"
-    }
+def voice_command(request: VoiceRequest, authorization: str = Header(None), 
+                 use_enhanced: bool = True):
+    """
+    Process voice command.
+    
+    Args:
+        request: VoiceRequest with text
+        authorization: JWT token
+        use_enhanced: Whether to use enhanced AI voice processing
+    
+    Returns:
+        Command result with action, params, and response
+    """
+    try:
+        _ = get_current_user(authorization)
+        
+        # Use enhanced voice processing if enabled and available
+        if use_enhanced:
+            try:
+                result = enhanced_voice_agent.parse_enhanced_voice_command(request.text)
+                # Add agent info if AI was used
+                if result.get("ai_response"):
+                    result["response"] = result.get("ai_response", result.get("response", ""))
+                return result
+            except Exception as e:
+                print(f"Enhanced voice processing error: {e}")
+                # Fallback to simple parsing
+                result = voice_agent.parse_voice_command(request.text)
+                return result
+        else:
+            result = voice_agent.parse_voice_command(request.text)
+            return result
+            
+    except Exception as e:
+        # Return a default response even if there's an error
+        return {
+            "action": "unknown",
+            "params": {},
+            "response": f"I encountered an error processing your command. Please try again. Error: {str(e)}"
+        }
+
+
+@app.post("/agent/voice/command/enhanced")
+def enhanced_voice_command(request: VoiceRequest, authorization: str = Header(None)):
+    """
+    Process voice command with enhanced AI understanding.
+    This endpoint always uses the enhanced voice processor.
+    """
+    try:
+        _ = get_current_user(authorization)
+        result = enhanced_voice_agent.parse_enhanced_voice_command(request.text)
+        return result
+    except Exception as e:
+        return {
+            "action": "unknown",
+            "params": {},
+            "response": f"Error: {str(e)}"
+        }
+
+
+@app.get("/agent/ai/agents")
+def list_ai_agents(authorization: str = Header(None)):
+    """List available AI agents."""
+    try:
+        _ = get_current_user(authorization)
+        agent_system = ai_agent_module.get_agent_system()
+        agents = agent_system.get_available_agents()
+        return {"agents": agents}
+    except Exception:
+        return {"agents": []}
+
+
+@app.post("/agent/ai/query")
+def ai_query(request: HomeworkRequest, authorization: str = Header(None), 
+             agent_name: Optional[str] = None):
+    """
+    Query a specific AI agent directly.
+    
+    Args:
+        request: HomeworkRequest with message and topic
+        authorization: JWT token
+        agent_name: Specific agent to use (None for auto-select)
+    
+    Returns:
+        AI agent response
+    """
+    try:
+        user = get_current_user(authorization)
+        agent_system = ai_agent_module.get_agent_system()
+        
+        # Build context-aware prompt
+        prompt = f"""User: {user.name} (ID: {user.id})
+Major: {user.major or 'Not specified'}
+GPA: {user.gpa or 0.0}
+Skills: {', '.join(user.skills or [])}
+
+Topic: {request.topic}
+
+Question: {request.message}
+
+Please provide a helpful, detailed response."""
+        
+        response = agent_system.generate(
+            prompt,
+            agent_name=agent_name,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=False
+        )
+        
+        return {"response": response, "agent": agent_name or "auto-selected"}
+    except Exception as e:
+        return {"response": f"Error: {str(e)}", "agent": None}
 
 
 @app.get("/agent/attendance/stats")

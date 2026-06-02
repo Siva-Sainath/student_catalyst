@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router";
 import {
   Send,
   Paperclip,
@@ -12,6 +13,9 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
+import { ChatService } from "../services/chatService";
+import VoiceService from "../services/voiceService";
+import MvpService from "../services/mvpService";
 
 interface Message {
   id: number;
@@ -67,22 +71,42 @@ function getAIResponse(input: string): string {
 }
 
 export function Chat() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [speechSupported, setSpeechSupported] = useState<boolean>(true);
+  const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Check if speech recognition is supported
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setSpeechSupported(!!SpeechRecognition);
+    
+    // Initialize session
+    MvpService.ensureSession().catch(() => {
+      console.warn("Failed to initialize demo session");
+    });
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const sendMessage = (text?: string) => {
+  const sendMessage = async (text?: string) => {
     const content = text || input.trim();
     if (!content) return;
+    
     setInput("");
+    setError(null);
+    setIsLoading(true);
 
     const userMsg: Message = {
       id: Date.now(),
@@ -93,16 +117,138 @@ export function Chat() {
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
-    setTimeout(() => {
+    let responseText = "";
+    try {
+      for await (const token of ChatService.streamHomeworkHelp(content, "General")) {
+        responseText += token;
+      }
+      if (!responseText.trim()) responseText = getAIResponse(content);
+    } catch (err) {
+      console.error("Chat error:", err);
+      responseText = getAIResponse(content);
+      setError("Could not connect to AI. Using fallback response.");
+    } finally {
+      setIsLoading(false);
+    }
+    
+    const aiMsg: Message = {
+      id: Date.now() + 1,
+      role: "assistant",
+      content: responseText,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, aiMsg]);
+    setIsTyping(false);
+  };
+
+  const runVoiceCommand = async (text?: string) => {
+    const voiceText = text || input.trim();
+    if (!voiceText) return;
+    
+    setIsLoading(true);
+    setError(null);
+    setVoiceFeedback("Processing voice command...");
+    
+    try {
+      const parsed = await VoiceService.executeCommand(voiceText);
+      
+      // Show feedback for the action
+      if (parsed.action !== "unknown" && parsed.action !== "chat") {
+        setVoiceFeedback(parsed.response);
+      }
+      
       const aiMsg: Message = {
-        id: Date.now() + 1,
+        id: Date.now() + 10,
         role: "assistant",
-        content: getAIResponse(content),
+        content: `Voice action: ${parsed.action}\n${parsed.response}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 1200 + Math.random() * 800);
+      setInput("");
+
+      if (parsed.action && parsed.action !== "unknown" && parsed.action !== "chat") {
+        setTimeout(() => {
+          setVoiceFeedback(null);
+          let path = `/${parsed.action}`;
+          // Map action names to actual routes
+          const routeMap: Record<string, string> = {
+            "home": "/",
+            "jobs": "/jobs",
+            "attendance": "/attendance",
+            "schedule": "/schedule",
+            "finance": "/finance",
+            "assignments": "/assignments",
+            "travel": "/travel",
+            "placement": "/placement",
+            "more": "/more",
+          };
+          navigate(routeMap[parsed.action] || path);
+        }, 1500);
+      } else {
+        setVoiceFeedback(null);
+      }
+    } catch (err) {
+      console.error("Voice command error:", err);
+      setError("Failed to execute voice command. Please try again.");
+      setVoiceFeedback(null);
+      // Still show the voice text as a regular message
+      if (voiceText) {
+        sendMessage(voiceText);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startSpeechRecognition = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError("Speech recognition is not supported in this browser. Please type your command.");
+      return;
+    }
+    
+    if (isRecording) {
+      return; // Already recording
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setError(null);
+    };
+
+    recognition.onerror = (event: any) => {
+      setIsRecording(false);
+      setError(`Speech recognition error: ${event.error || 'Unknown error'}`);
+      console.error("Speech recognition error:", event.error);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.onresult = async (event: any) => {
+      const speechToText = event.results[0][0].transcript;
+      setInput(speechToText);
+      setIsRecording(false);
+      
+      // Small delay to show the transcribed text
+      setTimeout(() => {
+        runVoiceCommand(speechToText);
+      }, 300);
+    };
+    
+    try {
+      recognition.start();
+    } catch (err) {
+      setIsRecording(false);
+      setError("Failed to start speech recognition. Please check microphone permissions.");
+      console.error("Failed to start speech recognition:", err);
+    }
   };
 
   const handleCopy = (id: number, text: string) => {
@@ -207,6 +353,48 @@ export function Chat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Voice feedback */}
+        {voiceFeedback && (
+          <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "#101e2e", border: "1px solid #2563eb" }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: "#2563eb" }}>
+              <Mic size={14} style={{ color: "#fff" }} />
+            </div>
+            <p className="text-sm" style={{ color: "#93c5fd" }}>{voiceFeedback}</p>
+          </div>
+        )}
+        
+        {/* Error message */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "#1e1b12", border: "1px solid #4a3c1a" }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: "#f59e0b" }}>
+              <span className="text-xs" style={{ color: "#fff" }}>!</span>
+            </div>
+            <p className="text-sm" style={{ color: "#fbbf24" }}>{error}</p>
+            <button onClick={() => setError(null)} className="text-xs" style={{ color: "#92400e" }}>
+              Dismiss
+            </button>
+          </div>
+        )}
+        
+        {/* Loading indicator */}
+        {isLoading && messages.length === 0 && (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    background: "#3b82f6",
+                    animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                  }}
+                />
+              ))}
+              <span className="text-sm" style={{ color: "#6b8cad" }}>Initializing...</span>
+            </div>
+          </div>
+        )}
+        
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -375,18 +563,32 @@ export function Chat() {
             className="flex-1 bg-transparent resize-none outline-none text-sm py-1"
             style={{ color: "#e8f0fe", maxHeight: 100 }}
           />
-          <button className="p-1">
-            <Mic size={18} style={{ color: "#4a6585" }} />
+          <button 
+            className="p-1 relative" 
+            onClick={startSpeechRecognition}
+            disabled={isLoading || isRecording}
+            title={!speechSupported ? "Speech recognition not supported" : isLoading ? "Please wait..." : "Click to speak"}
+          >
+            {isRecording && (
+              <span className="absolute inset-0 rounded-full animate-ping bg-red-500 opacity-40" />
+            )}
+            <Mic size={18} style={{ 
+              color: isRecording ? "#ef4444" : !speechSupported ? "#374151" : isLoading ? "#6b7280" : "#4a6585" 
+            }} />
           </button>
           <button
             onClick={() => sendMessage()}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isLoading}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-95"
             style={{
-              background: input.trim() ? "#3b82f6" : "#1e3561",
+              background: input.trim() && !isLoading ? "#3b82f6" : "#1e3561",
             }}
           >
-            <Send size={14} style={{ color: input.trim() ? "#fff" : "#4a6585" }} />
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send size={14} style={{ color: input.trim() && !isLoading ? "#fff" : "#4a6585" }} />
+            )}
           </button>
         </div>
         <p className="text-center text-[9px] mt-1.5" style={{ color: "#2a4060" }}>

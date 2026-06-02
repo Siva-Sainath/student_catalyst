@@ -1,6 +1,6 @@
 import json
-from llm_client import generate
 from models import User
+from agents.hermes_harness import generate as harness_generate
 
 
 def build_jobs_prompt(user: User) -> str:
@@ -34,7 +34,7 @@ def parse_job_recommendations(text: str):
 
 def get_job_recommendations(user: User):
   prompt = build_jobs_prompt(user)
-  output = generate(prompt, temperature=0.25, max_tokens=500)
+  output = harness_generate(prompt, task="agentic", text_hint="jobs internship", temperature=0.25, max_tokens=700)
   recommendations = parse_job_recommendations(output)
   if not recommendations:
     recommendations = [

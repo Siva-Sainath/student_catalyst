@@ -1,48 +1,53 @@
 from typing import Dict
+from agents.voice_routes import with_route
 
 
 def parse_voice_command(text: str) -> Dict[str, any]:
   normalized = text.lower().strip()
-  
-  # Remove common prefixes
+
   for prefix in ["hey", "hi", "hello", "okay", "please", "can you", "show me", "open", "go to", "navigate to"]:
     if normalized.startswith(prefix):
       normalized = normalized[len(prefix):].strip()
 
-  # Check for specific commands
   if any(word in normalized for word in ["attendance", "presence", "bunk", "absent", "present"]):
-    return {"action": "attendance", "params": {}, "response": "Opening your attendance report."}
+    return with_route({"action": "attendance", "params": {}, "response": "Opening attendance."})
 
   if any(word in normalized for word in ["dashboard", "home", "main", "overview"]):
-    return {"action": "home", "params": {}, "response": "Navigating to your dashboard."}
+    return with_route({"action": "home", "params": {}, "response": "Going home."})
 
-  if any(word in normalized for word in ["schedule", "timetable", "class", "classes", "lecture", "timetable"]):
-    return {"action": "schedule", "params": {}, "response": "Here is your schedule."}
+  if any(word in normalized for word in ["schedule", "timetable", "class", "classes", "lecture"]):
+    return with_route({"action": "schedule", "params": {}, "response": "Opening schedule."})
 
-  if any(word in normalized for word in ["job", "jobs", "internship", "placement", "career", "opportunity"]):
-    return {"action": "jobs", "params": {}, "response": "Showing job recommendations."}
+  if any(word in normalized for word in ["job", "jobs", "internship", "career", "opportunity"]):
+    return with_route({"action": "jobs", "params": {}, "response": "Opening jobs."})
 
-  if any(word in normalized for word in ["finance", "budget", "spend", "spending", "money", "expense", "financial"]):
-    return {"action": "finance", "params": {}, "response": "Checking your finance dashboard."}
+  if "placement" in normalized and any(w in normalized for w in ["tracker", "application", "interview", "offer"]):
+    return with_route({"action": "placement", "params": {}, "response": "Opening placement tracker."})
 
-  if any(word in normalized for word in ["assignment", "assignments", "homework", "task", "project", "due"]):
-    return {"action": "assignments", "params": {}, "response": "Showing your assignments."}
+  if any(word in normalized for word in ["finance", "budget", "spend", "spending", "money", "expense"]):
+    return with_route({"action": "finance", "params": {}, "response": "Opening finance."})
+
+  if any(word in normalized for word in ["assignment", "assignments", "homework", "task", "due"]):
+    return with_route({"action": "assignments", "params": {}, "response": "Opening assignments."})
 
   if any(word in normalized for word in ["travel", "route", "transport", "bus", "commute"]):
-    return {"action": "travel", "params": {}, "response": "Showing your travel routes."}
+    return with_route({"action": "travel", "params": {}, "response": "Opening travel."})
 
-  if any(word in normalized for word in ["placement", "company", "interview", "application"]):
-    return {"action": "placement", "params": {}, "response": "Showing placement information."}
+  if any(word in normalized for word in ["settings", "more", "profile"]):
+    return with_route({"action": "more", "params": {}, "response": "Opening more."})
 
-  if any(word in normalized for word in ["chat", "help", "explain", "question", "answer", "tell me", "what is", "how to"]):
-    return {"action": "chat", "params": {"topic": "General"}, "response": "I can help with your question. Please send your message."}
+  if any(word in normalized for word in ["chat", "campus ai", "help", "explain", "ask"]):
+    return with_route({"action": "chat", "params": {"topic": "General"}, "response": "Opening chat."})
 
-  # If it's a question or statement, treat it as chat
   if normalized.endswith("?") or len(normalized.split()) > 3:
-    return {"action": "chat", "params": {"topic": "General"}, "response": f"I heard: {text}. How can I help with that?"}
+    return with_route({
+      "action": "chat",
+      "params": {"topic": "General", "message": text},
+      "response": "Opening chat with your question.",
+    })
 
-  return {
+  return with_route({
     "action": "unknown",
     "params": {},
-    "response": "I didn't understand that command. Try asking me about attendance, jobs, schedule, finance, assignments, travel, or placement. Or just ask me a question!",
-  }
+    "response": "Try: open attendance, jobs, schedule, finance, assignments, travel, or ask a question.",
+  })

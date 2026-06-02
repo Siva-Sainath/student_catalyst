@@ -1,296 +1,484 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { ArrowLeft, TrendingDown, TrendingUp, Zap, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
-import FinanceService from "../services/financeService";
+  IndianRupee,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  CreditCard,
+  Calendar,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Plus,
+  Search,
+  Filter,
+  ArrowRight,
+} from "lucide-react";
+import MvpService from "../services/mvpService";
 
-const spending = [
-  { name: "Food", value: 3200, color: "#f59e0b" },
-  { name: "Transport", value: 1100, color: "#06b6d4" },
-  { name: "Study", value: 800, color: "#3b82f6" },
-  { name: "Entertainment", value: 650, color: "#8b5cf6" },
-  { name: "Misc", value: 450, color: "#6b8cad" },
+interface BunkBudget {
+  id: number;
+  subject: string;
+  code: string;
+  totalClasses: number;
+  attended: number;
+  bunksTaken: number;
+  safeBunks: number;
+  percentage: number;
+  status: "safe" | "warning" | "danger";
+}
+
+interface Expense {
+  id: number;
+  category: string;
+  amount: number;
+  date: string;
+  description: string;
+  type: "income" | "expense";
+}
+
+const STATUS_COLORS: Record<string, { color: string; bg: string }> = {
+  safe: { color: "var(--success-500)", bg: "rgba(16, 185, 129, 0.1)" },
+  warning: { color: "var(--warning-500)", bg: "rgba(245, 158, 11, 0.1)" },
+  danger: { color: "var(--danger-500)", bg: "rgba(239, 68, 68, 0.1)" },
+};
+
+const SEED_BUNK_BUDGET: BunkBudget[] = [
+  { id: 1, subject: "Data Structures", code: "CS201", totalClasses: 40, attended: 34, bunksTaken: 6, safeBunks: 2, percentage: 85, status: "safe" },
+  { id: 2, subject: "Operating Systems", code: "CS202", totalClasses: 35, attended: 24, bunksTaken: 11, safeBunks: 0, percentage: 68, status: "danger" },
+  { id: 3, subject: "Computer Networks", code: "CS203", totalClasses: 30, attended: 28, bunksTaken: 2, safeBunks: 4, percentage: 93, status: "safe" },
+  { id: 4, subject: "Database Management", code: "CS204", totalClasses: 25, attended: 20, bunksTaken: 5, safeBunks: 1, percentage: 80, status: "safe" },
+  { id: 5, subject: "Software Engineering", code: "CS205", totalClasses: 20, attended: 16, bunksTaken: 4, safeBunks: 1, percentage: 80, status: "safe" },
 ];
 
-const transactions = [
-  { desc: "Mess Canteen", amount: -120, date: "Today, 1:30 PM", cat: "Food", emoji: "🍛" },
-  { desc: "Uber to College", amount: -85, date: "Today, 8:10 AM", cat: "Transport", emoji: "🚗" },
-  { desc: "Amazon - Book", amount: -349, date: "Yesterday", cat: "Study", emoji: "📚" },
-  { desc: "Pocket Money", amount: +3000, date: "Mar 24", cat: "Income", emoji: "💰" },
-  { desc: "Pizza Hut", amount: -340, date: "Mar 23", cat: "Food", emoji: "🍕" },
-  { desc: "Movie - PVR", amount: -250, date: "Mar 22", cat: "Entertainment", emoji: "🎬" },
-  { desc: "Bus Pass", amount: -500, date: "Mar 20", cat: "Transport", emoji: "🚌" },
+const SEED_EXPENSES: Expense[] = [
+  { id: 1, category: "Food", amount: 1500, date: "Jun 5", description: "Mess fees", type: "expense" },
+  { id: 2, category: "Transport", amount: 500, date: "Jun 4", description: "Bus fare", type: "expense" },
+  { id: 3, category: "Books", amount: 2000, date: "Jun 3", description: "DSA Book", type: "expense" },
+  { id: 4, category: "Pocket Money", amount: 10000, date: "Jun 1", description: "Monthly allowance", type: "income" },
+  { id: 5, category: "Stationery", amount: 800, date: "Jun 2", description: "Notebooks", type: "expense" },
 ];
 
 export function Finance() {
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<"overview" | "transactions">("overview");
-  const [dynamicSpending, setDynamicSpending] = useState(spending);
+  const [bunkBudget, setBunkBudget] = useState<BunkBudget[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("bunk-budget");
 
   useEffect(() => {
-    (async () => {
+    const fetchData = async () => {
       try {
-        const data = await FinanceService.getInsights();
-        if (data.stats?.breakdown?.length) {
-          const palette = ["#f59e0b", "#06b6d4", "#3b82f6", "#8b5cf6", "#6b8cad"];
-          setDynamicSpending(
-            data.stats.breakdown.map((item, idx) => ({
-              name: item.category,
-              value: item.total,
-              color: palette[idx % palette.length],
-            }))
-          );
+        setLoading(true);
+        const bunkData = await MvpService.getBunkBudget();
+        const expenseData = await MvpService.getExpenses();
+        
+        if (bunkData.budget && bunkData.budget.length > 0) {
+          setBunkBudget(bunkData.budget);
+        } else {
+          setBunkBudget(SEED_BUNK_BUDGET);
+        }
+        
+        if (expenseData.expenses && expenseData.expenses.length > 0) {
+          setExpenses(expenseData.expenses);
+        } else {
+          setExpenses(SEED_EXPENSES);
         }
       } catch {
-        // fallback
+        setBunkBudget(SEED_BUNK_BUDGET);
+        setExpenses(SEED_EXPENSES);
+      } finally {
+        setLoading(false);
       }
-    })();
+    };
+    fetchData();
   }, []);
 
-  const totalSpent = dynamicSpending.reduce((a, b) => a + b.value, 0);
-  const balance = 8450;
+  const filteredBunkBudget = bunkBudget.filter((b) => {
+    if (searchQuery && !b.subject.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !b.code.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  const filteredExpenses = expenses.filter((e) => {
+    if (searchQuery && !e.category.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !e.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  const totalSafeBunks = filteredBunkBudget.reduce((sum, b) => sum + b.safeBunks, 0);
+  const totalBunksTaken = filteredBunkBudget.reduce((sum, b) => sum + b.bunksTaken, 0);
+  const averagePercentage = filteredBunkBudget.length > 0 
+    ? filteredBunkBudget.reduce((sum, b) => sum + b.percentage, 0) / filteredBunkBudget.length
+    : 0;
+
+  const totalIncome = filteredExpenses.filter(e => e.type === "income").reduce((sum, e) => sum + e.amount, 0);
+  const totalExpense = filteredExpenses.filter(e => e.type === "expense").reduce((sum, e) => sum + e.amount, 0);
+  const balance = totalIncome - totalExpense;
+
+  const dangerCount = filteredBunkBudget.filter(b => b.status === "danger").length;
 
   return (
-    <div className="px-4 py-3 space-y-4">
+    <div className="flex flex-col h-full bg-primary">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)}>
-          <ArrowLeft size={20} style={{ color: "#6b8cad" }} />
-        </button>
-        <div>
-          <h1 className="text-xl" style={{ color: "#e8f0fe" }}>
-            Finance
-          </h1>
-          <p className="text-xs" style={{ color: "#6b8cad" }}>
-            March 2026
-          </p>
-        </div>
-      </div>
-
-      {/* Balance card */}
-      <div
-        className="rounded-2xl p-4 relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
-          border: "1px solid #047857",
-        }}
-      >
-        <div
-          className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full opacity-20"
-          style={{ background: "#34d399" }}
-        />
-        <p className="text-xs" style={{ color: "#6ee7b7" }}>
-          Available Balance
-        </p>
-        <p className="text-3xl mt-1" style={{ color: "#fff" }}>
-          ₹{balance.toLocaleString()}
-        </p>
-        <div className="flex gap-4 mt-3">
+      <div className="px-4 py-4 shrink-0 bg-secondary border-b border-primary">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-[10px]" style={{ color: "#6ee7b7" }}>
-              Spent This Month
-            </p>
-            <p className="text-sm" style={{ color: "#fca5a5" }}>
-              ₹{totalSpent.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px]" style={{ color: "#6ee7b7" }}>
-              Saved
-            </p>
-            <p className="text-sm" style={{ color: "#86efac" }}>
-              ₹{(5000 - totalSpent + 1200).toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px]" style={{ color: "#6ee7b7" }}>
-              Budget Left
-            </p>
-            <p className="text-sm" style={{ color: "#fcd34d" }}>
-              ₹{(5000 - totalSpent).toLocaleString()}
+            <h1 className="text-xl font-semibold text-primary">
+              Finance
+            </h1>
+            <p className="text-sm mt-1 text-secondary">
+              Track your bunk budget and expenses
             </p>
           </div>
         </div>
-      </div>
 
-      {/* AI tip */}
-      <div
-        className="rounded-2xl p-3 flex items-start gap-2"
-        style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)" }}
-      >
-        <Zap size={14} style={{ color: "#3b82f6" }} />
-        <div>
-          <p className="text-xs" style={{ color: "#60a5fa" }}>
-            AI Money Insight
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: "#8ba3c7" }}>
-            You're spending 35% more on food this month. Cooking on weekends can save ~₹600/month.
-          </p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div
-        className="flex rounded-xl p-1"
-        style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-      >
-        {(["overview", "transactions"] as const).map((t) => (
+        {/* Tabs */}
+        <div className="flex items-center gap-1 mt-4">
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className="flex-1 py-2 rounded-lg text-sm transition-all"
-            style={{
-              background: tab === t ? "#3b82f6" : "transparent",
-              color: tab === t ? "#fff" : "#6b8cad",
-            }}
+            onClick={() => setActiveTab("bunk-budget")}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeTab === "bunk-budget" ? "bg-tertiary border border-primary text-primary" : "text-secondary"}`}
           >
-            {t === "overview" ? "Breakdown" : "Transactions"}
+            Bunk Budget
           </button>
-        ))}
+          <button
+            onClick={() => setActiveTab("expenses")}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeTab === "expenses" ? "bg-tertiary border border-primary text-primary" : "text-secondary"}`}
+          >
+            Expenses
+          </button>
+          <button
+            onClick={() => setActiveTab("summary")}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeTab === "summary" ? "bg-tertiary border border-primary text-primary" : "text-secondary"}`}
+          >
+            Summary
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="mt-4 relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-2 py-1.5 rounded-lg text-sm bg-tertiary border border-primary text-primary placeholder:text-muted"
+          />
+        </div>
       </div>
 
-      {tab === "overview" && (
-        <>
-          {/* Pie chart */}
-          <div
-            className="rounded-2xl p-4"
-            style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-          >
-            <p className="text-sm mb-3" style={{ color: "#e8f0fe" }}>
-              Spending Breakdown
-            </p>
-            <div style={{ height: 180 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dynamicSpending}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {dynamicSpending.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: "#0d1f3c",
-                      border: "1px solid #1e3561",
-                      borderRadius: 8,
-                      color: "#e8f0fe",
-                    }}
-                    formatter={(v: number) => [`₹${v}`, ""]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Bunk Budget Tab */}
+        {activeTab === "bunk-budget" && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl p-3 bg-tertiary border border-primary">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-success">
+                    <CheckCircle size={16} className="text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary">Total Safe Bunks</p>
+                    <p className="text-xl font-semibold text-success">{totalSafeBunks}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="rounded-xl p-3 bg-tertiary border border-primary">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-warning">
+                    <Calendar size={16} className="text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary">Bunks Taken</p>
+                    <p className="text-xl font-semibold text-warning">{totalBunksTaken}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="rounded-xl p-3 bg-tertiary border border-primary">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-info">
+                    <TrendingUp size={16} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary">Avg Attendance</p>
+                    <p className="text-xl font-semibold text-primary">{averagePercentage.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {dynamicSpending.map((s) => (
-                <div key={s.name} className="flex items-center gap-2">
+
+            {dangerCount > 0 && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-warning-900/20 border border-warning-500">
+                <AlertTriangle size={16} className="text-warning" />
+                <p className="text-sm text-warning-400">
+                  ⚠️ {dangerCount} subjects below 75% attendance - attend all classes!
+                </p>
+              </div>
+            )}
+
+            {/* Bunk Budget List */}
+            <div className="space-y-3">
+              {filteredBunkBudget.map((b) => {
+                const config = STATUS_COLORS[b.status];
+                return (
                   <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ background: s.color }}
-                  />
-                  <span className="text-xs" style={{ color: "#8ba3c7" }}>
-                    {s.name}
-                  </span>
-                  <span className="text-xs ml-auto" style={{ color: "#e8f0fe" }}>
-                    ₹{s.value}
-                  </span>
+                    key={b.id}
+                    className="rounded-xl p-3 bg-card border border-primary"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 badge-success">
+                          {b.status === "safe" && <CheckCircle size={18} className="text-success" />}
+                          {b.status === "warning" && <AlertTriangle size={18} className="text-warning" />}
+                          {b.status === "danger" && <XCircle size={18} className="text-danger" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-primary">
+                            {b.subject}
+                          </p>
+                          <p className="text-xs text-secondary">
+                            {b.code} · {b.attended}/{b.totalClasses} classes
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2">
+                          <div className={`text-lg font-semibold ${b.safeBunks > 0 ? 'text-success' : 'text-danger'}`}>
+                            {b.safeBunks}
+                          </div>
+                          <div className="text-xs text-secondary">
+                            safe
+                          </div>
+                        </div>
+                        <p className="text-xs mt-1 text-secondary">
+                          {b.bunksTaken} taken · {b.percentage}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-3">
+                      <div className="h-1.5 rounded-full overflow-hidden bg-border-primary">
+                        <div
+                          className={`h-full rounded-full ${b.percentage >= 75 ? 'bg-success-500' : b.percentage >= 65 ? 'bg-warning-500' : 'bg-danger-500'}`}
+                          style={{ width: `${b.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Expenses Tab */}
+        {activeTab === "expenses" && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl p-3 bg-tertiary border border-primary">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-success">
+                    <IndianRupee size={16} className="text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary">Total Income</p>
+                    <p className="text-xl font-semibold text-success">₹{totalIncome}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="rounded-xl p-3 bg-tertiary border border-primary">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-danger">
+                    <IndianRupee size={16} className="text-danger" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary">Total Expense</p>
+                    <p className="text-xl font-semibold text-danger">₹{totalExpense}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="rounded-xl p-3 bg-tertiary border border-primary">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-info">
+                    <Wallet size={16} className={balance >= 0 ? "text-success" : "text-danger"} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary">Balance</p>
+                    <p className={`text-xl font-semibold ${balance >= 0 ? 'text-success' : 'text-danger'}`}>
+                      ₹{balance}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expense List */}
+            <div className="space-y-3">
+              {filteredExpenses.map((e) => (
+                <div
+                  key={e.id}
+                  className="rounded-xl p-3 bg-card border border-primary"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${e.type === "income" ? "badge-success" : "badge-danger"}`}>
+                        {e.type === "income" ? (
+                          <TrendingUp size={18} className="text-success" />
+                        ) : (
+                          <TrendingDown size={18} className="text-danger" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-primary">
+                          {e.category}
+                        </p>
+                        <p className="text-xs text-secondary">
+                          {e.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-lg font-semibold ${e.type === "income" ? "text-success" : "text-danger"}`}>
+                        {e.type === "income" ? "+" : "-"} ₹{e.amount}
+                      </p>
+                      <p className="text-xs mt-1 text-secondary">
+                        {e.date}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          </>
+        )}
 
-          {/* Category bars */}
-          <div className="space-y-2">
-            {dynamicSpending.map((s) => (
-              <div
-                key={s.name}
-                className="rounded-xl p-3"
-                style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-              >
-                <div className="flex justify-between mb-1.5">
-                  <span className="text-xs" style={{ color: "#e8f0fe" }}>
-                    {s.name}
-                  </span>
-                  <span className="text-xs" style={{ color: s.color }}>
-                    ₹{s.value}
-                  </span>
-                </div>
-                <div
-                  className="h-1.5 rounded-full overflow-hidden"
-                  style={{ background: "#1e3561" }}
-                >
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${(s.value / totalSpent) * 100}%`,
-                      background: s.color,
-                    }}
-                  />
+        {/* Summary Tab */}
+        {activeTab === "summary" && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl p-4 bg-tertiary border border-primary">
+                <h2 className="text-sm font-medium mb-3 text-primary">
+                  Bunk Budget Summary
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-secondary">Total Safe Bunks</span>
+                    <span className="text-sm font-medium text-success">{totalSafeBunks}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-secondary">Bunks Taken</span>
+                    <span className="text-sm font-medium text-warning">{totalBunksTaken}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-secondary">Average Attendance</span>
+                    <span className="text-sm font-medium text-primary">{averagePercentage.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-secondary">Subjects in Danger</span>
+                    <span className="text-sm font-medium text-danger">{dangerCount}</span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </>
-      )}
 
-      {tab === "transactions" && (
-        <div className="space-y-2">
-          {transactions.map((t, i) => (
-            <div
-              key={i}
-              className="rounded-xl p-3 flex items-center gap-3"
-              style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                style={{ background: "#0d1f3c" }}
-              >
-                {t.emoji}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm" style={{ color: "#e8f0fe" }}>
-                  {t.desc}
-                </p>
-                <p className="text-xs" style={{ color: "#6b8cad" }}>
-                  {t.date} · {t.cat}
-                </p>
-              </div>
-              <div className="text-right">
-                <p
-                  className="text-sm"
-                  style={{ color: t.amount > 0 ? "#22c55e" : "#e8f0fe" }}
-                >
-                  {t.amount > 0 ? "+" : ""}₹{Math.abs(t.amount)}
-                </p>
+              <div className="rounded-xl p-4 bg-tertiary border border-primary">
+                <h2 className="text-sm font-medium mb-3 text-primary">
+                  Financial Summary
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-secondary">Total Income</span>
+                    <span className="text-sm font-medium text-success">₹{totalIncome}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-secondary">Total Expense</span>
+                    <span className="text-sm font-medium text-danger">₹{totalExpense}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-secondary">Balance</span>
+                    <span className={`text-sm font-medium ${balance >= 0 ? 'text-success' : 'text-danger'}`}>
+                      ₹{balance}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
 
-          <button
-            className="w-full flex items-center justify-center gap-2 rounded-xl py-3"
-            style={{ background: "#0a1628", border: "1px dashed #1e3561" }}
-          >
-            <Plus size={14} style={{ color: "#3b82f6" }} />
-            <span className="text-sm" style={{ color: "#3b82f6" }}>
-              Add Transaction
-            </span>
-          </button>
-        </div>
-      )}
+            <div className="rounded-xl p-4 bg-tertiary border border-primary">
+              <h2 className="text-sm font-medium mb-3 text-primary">
+                Tips
+              </h2>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-xs text-secondary">
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 badge-info">
+                    <CheckCircle size={10} className="text-primary" />
+                  </div>
+                  <span>Attend all classes for subjects below 75% to recover attendance</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-secondary">
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 badge-info">
+                    <CheckCircle size={10} className="text-primary" />
+                  </div>
+                  <span>Track your expenses weekly to stay within budget</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-secondary">
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 badge-info">
+                    <CheckCircle size={10} className="text-primary" />
+                  </div>
+                  <span>Use safe bunks wisely - don't exceed the limit</span>
+                </li>
+              </ul>
+            </div>
+          </>
+        )}
 
-      <div className="h-2" />
+        {filteredBunkBudget.length === 0 && filteredExpenses.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Wallet size={48} className="text-primary" />
+            <p className="text-sm mt-4 text-secondary">
+              No data found matching your search
+            </p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 rounded-full bg-primary"
+                  style={{
+                    animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-warning-900/20 border border-warning-500">
+            <AlertTriangle size={16} className="text-warning" />
+            <p className="text-sm text-warning-400">{error}</p>
+          </div>
+        )}
+      </div>
+
+
     </div>
   );
 }

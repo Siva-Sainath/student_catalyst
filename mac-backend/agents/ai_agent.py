@@ -56,9 +56,12 @@ class AIAgentSystem:
         
         # Hermes Agent - Best for job search, research, complex queries
         hermes_endpoint = os.getenv("HERMES_ENDPOINT", "http://localhost:11434")
-        hermes_model = os.getenv("HERMES_MODEL", "nousresearch/hermes-2-pro-mistral:7b")
+        hermes_model = os.getenv(
+            "HERMES_MODEL",
+            "hermes3:3b",
+        )
         
-        if self._check_endpoint(hermes_endpoint):
+        if self._check_endpoint(hermes_endpoint) and self._model_exists(hermes_endpoint, hermes_model):
             self.agents["hermes"] = AgentConfig(
                 name="Hermes Research Agent",
                 agent_type=AgentType.HERMES,
@@ -75,9 +78,9 @@ Always provide detailed, well-researched answers with sources when possible.""",
         
         # DeepSeek Agent - Best for coding, math, technical questions
         deepseek_endpoint = os.getenv("LOCAL_MODEL_ENDPOINT", "http://localhost:11434")
-        deepseek_model = os.getenv("LOCAL_MODEL_NAME", "deepseek-coder:7b-instruct-q4_K_M")
+        deepseek_model = os.getenv("CODE_MODEL", os.getenv("LOCAL_MODEL_NAME", "qwen2.5-coder:7b"))
         
-        if self._check_endpoint(deepseek_endpoint):
+        if self._check_endpoint(deepseek_endpoint) and self._model_exists(deepseek_endpoint, deepseek_model):
             self.agents["deepseek"] = AgentConfig(
                 name="DeepSeek Coder",
                 agent_type=AgentType.DEEPSEEK,
@@ -112,7 +115,7 @@ You can help with a wide variety of topics including general knowledge, advice, 
         mistral_endpoint = os.getenv("MISTRAL_ENDPOINT", "http://localhost:11434")
         mistral_model = os.getenv("MISTRAL_MODEL", "mistral:7b-instruct-q4_K_M")
         
-        if self._check_endpoint(mistral_endpoint):
+        if self._check_endpoint(mistral_endpoint) and self._model_exists(mistral_endpoint, mistral_model):
             self.agents["mistral"] = AgentConfig(
                 name="Mistral Fast",
                 agent_type=AgentType.MISTRAL,
@@ -124,6 +127,22 @@ You can help with a wide variety of topics including general knowledge, advice, 
 Provide concise, accurate answers quickly. You're optimized for speed and clarity.""",
                 capabilities=["fast", "efficient", "quick_answers", "summarization"]
             )
+
+        # Hermes agentic persona on Mistral when dedicated Hermes weights are not installed
+        if "hermes" not in self.agents and "mistral" in self.agents:
+            base = self.agents["mistral"]
+            self.agents["hermes"] = AgentConfig(
+                name="Hermes Agent (Mistral)",
+                agent_type=AgentType.HERMES,
+                model_name=base.model_name,
+                endpoint=base.endpoint,
+                temperature=0.25,
+                max_tokens=2048,
+                system_prompt="""You are Hermes, an agentic campus career assistant.
+Return structured, actionable answers. For job tasks output valid JSON only when asked.
+Be concise, accurate, and student-friendly.""",
+                capabilities=["research", "job_search", "complex_queries", "analysis"],
+            )
     
     def _check_endpoint(self, endpoint: str) -> bool:
         """Check if an endpoint is available."""
@@ -131,6 +150,17 @@ Provide concise, accurate answers quickly. You're optimized for speed and clarit
             response = requests.get(f"{endpoint}/api/tags", timeout=5)
             return response.status_code == 200
         except:
+            return False
+
+    def _model_exists(self, endpoint: str, model_name: str) -> bool:
+        try:
+            response = requests.get(f"{endpoint}/api/tags", timeout=5)
+            if response.status_code != 200:
+                return False
+            names = [m.get("name", "") for m in response.json().get("models", [])]
+            base = model_name.split(":")[0]
+            return any(n == model_name or n.startswith(base) for n in names)
+        except Exception:
             return False
     
     def get_available_agents(self) -> List[str]:
@@ -220,9 +250,12 @@ Provide concise, accurate answers quickly. You're optimized for speed and clarit
         body = {
             "model": agent.model_name,
             "prompt": full_prompt,
-            "temperature": temperature if temperature is not None else agent.temperature,
-            "max_tokens": max_tokens if max_tokens is not None else agent.max_tokens,
             "stream": stream,
+            "options": {
+                "temperature": temperature if temperature is not None else agent.temperature,
+                "num_predict": max_tokens if max_tokens is not None else agent.max_tokens,
+                "num_ctx": int(os.getenv("OLLAMA_CONTEXT_WINDOW", "4096")),
+            },
         }
         
         if stream:

@@ -2,86 +2,77 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const TOKEN_KEY = "access_token";
-
 let tokenCache: string | null = null;
 
-async function getToken(): Promise<string | null> {
-  if (tokenCache) return tokenCache;
-  tokenCache = await AsyncStorage.getItem(TOKEN_KEY);
+async function token() {
+  if (!tokenCache) tokenCache = await AsyncStorage.getItem(TOKEN_KEY);
   return tokenCache;
 }
 
-async function setToken(token: string) {
-  tokenCache = token;
-  await AsyncStorage.setItem(TOKEN_KEY, token);
-}
-
-async function request(path: string, options: RequestInit = {}) {
-  const token = await getToken();
+async function req(path: string, init: RequestInit = {}) {
+  const t = await token();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
+    ...(init.headers as Record<string, string>),
   };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-  return response.json();
+  if (t) headers.Authorization = `Bearer ${t}`;
+  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 export const Api = {
-  async restoreToken() {
-    const token = await getToken();
-    return !!token;
-  },
-
-  async loginDemo(email: string, name: string) {
-    const data = await request("/auth/demo", {
+  baseUrl: BASE_URL,
+  async ensureAuth() {
+    if (await token()) return;
+    const data = await req("/auth/demo", {
       method: "POST",
-      body: JSON.stringify({ email, name }),
+      body: JSON.stringify({ email: "student@vit.ac.in", name: "Rahul Sharma" }),
     });
-    await setToken(data.access_token);
-    return data;
+    tokenCache = data.access_token;
+    await AsyncStorage.setItem(TOKEN_KEY, data.access_token);
   },
-
-  async getDashboard() {
-    return request("/mvp/dashboard");
-  },
-
-  async *streamHomework(message: string, topic = "General"): AsyncGenerator<string> {
-    const token = await getToken();
-    const response = await fetch(`${BASE_URL}/agent/chat/homework`, {
+  getDashboard: () => req("/mvp/dashboard"),
+  getSchedule: () => req("/mvp/schedule"),
+  getAssignments: () => req("/mvp/assignments"),
+  getPlacement: () => req("/mvp/placement"),
+  getTravel: () => req("/mvp/travel"),
+  getAttendance: () => req("/agent/attendance/stats"),
+  getFinance: () => req("/agent/finance/insights"),
+  getJobs: () => req("/agent/jobs/recommend"),
+  voice: (text: string) =>
+    req("/agent/voice/command/enhanced", { method: "POST", body: JSON.stringify({ text }) }),
+  async *streamChat(message: string, topic = "General") {
+    const t = await token();
+    const res = await fetch(`${BASE_URL}/agent/chat/homework`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(t ? { Authorization: `Bearer ${t}` } : {}),
       },
       body: JSON.stringify({ message, topic }),
     });
-    if (!response.ok || !response.body) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const reader = res.body?.getReader();
+    if (!reader) return;
+    const dec = new TextDecoder();
+    let buf = "";
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const events = buffer.split("\n\n");
-      for (let i = 0; i < events.length - 1; i += 1) {
-        const line = events[i].trim();
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split("\n\n");
+      for (let i = 0; i < parts.length - 1; i++) {
+        const line = parts[i].trim();
         if (!line.startsWith("data:")) continue;
-        const jsonPayload = line.slice(5).trim();
         try {
-          const data = JSON.parse(jsonPayload);
-          if (data.token) yield data.token;
+          const j = JSON.parse(line.slice(5).trim());
+          if (j.token) yield j.token as string;
         } catch {
-          // ignore malformed event
+          /* skip */
         }
       }
-      buffer = events[events.length - 1];
+      buf = parts[parts.length - 1];
     }
   },
 };

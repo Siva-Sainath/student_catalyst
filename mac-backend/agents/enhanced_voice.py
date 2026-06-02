@@ -11,6 +11,8 @@ from enum import Enum
 
 from .voice import parse_voice_command as simple_parse_voice_command
 from .ai_agent import get_agent_system
+from .hermes_harness import generate as harness_generate
+from .voice_routes import with_route, ACTION_ROUTES
 
 
 class CommandType(Enum):
@@ -96,6 +98,7 @@ class EnhancedVoiceProcessor:
         # First, try simple keyword matching (fast)
         simple_result = simple_parse_voice_command(cleaned)
         if simple_result.get("action") != "unknown":
+            simple_result = with_route(simple_result)
             return ParsedCommand(
                 command_type=CommandType.NAVIGATION if simple_result["action"] in [
                     "attendance", "schedule", "jobs", "finance", "home", 
@@ -371,7 +374,8 @@ JSON:"""
             "action": command.action,
             "params": command.params or {},
             "response": command.response,
-            "success": True
+            "success": True,
+            "route": ACTION_ROUTES.get(command.action or ""),
         }
         
         # Handle AI queries
@@ -413,24 +417,7 @@ Be specific and actionable. If the user mentions a specific company, role, or te
 
 Response:"""
         
-        # Use Hermes agent if available
-        if "hermes" in self.agent_system.get_available_agents():
-            response = self.agent_system.generate(
-                prompt,
-                agent_name="hermes",
-                temperature=0.3,
-                max_tokens=1024,
-                stream=False
-            )
-            return response
-        else:
-            # Fallback to any available agent
-            return self.agent_system.generate(
-                prompt,
-                temperature=0.3,
-                max_tokens=1024,
-                stream=False
-            )
+        return harness_generate(prompt, task="agentic", text_hint=query, temperature=0.3, max_tokens=1024)
     
     def _execute_ai_query(self, command: ParsedCommand) -> str:
         """Execute an AI query using the selected agent."""
@@ -439,13 +426,8 @@ Response:"""
         # Use the agent specified in the command, or auto-select
         agent_name = command.agent_name
         
-        return self.agent_system.generate(
-            query,
-            agent_name=agent_name,
-            temperature=0.7,
-            max_tokens=1024,
-            stream=False
-        )
+        task = "code" if any(k in query.lower() for k in ("code", "math", "algorithm", "python")) else "agentic"
+        return harness_generate(query, task=task, text_hint=query, temperature=0.5, max_tokens=1024)
 
 
 # Global instance
@@ -464,4 +446,4 @@ def parse_enhanced_voice_command(text: str) -> Dict:
     """
     command = voice_processor.parse(text)
     result = voice_processor.execute(command)
-    return result
+    return with_route(result)

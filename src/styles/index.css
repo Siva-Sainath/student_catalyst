@@ -7,7 +7,7 @@
 }
 
 body {
-  background: #050e1d;
+  background: var(--bg-primary);
   overflow: hidden;
 }
 

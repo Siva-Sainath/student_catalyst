@@ -1,339 +1,351 @@
-import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle, TrendingDown, TrendingUp, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import {
-  RadialBarChart,
-  RadialBar,
-  ResponsiveContainer,
-} from "recharts";
-import AttendanceService from "../services/attendanceService";
+  Users,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Clock,
+  ArrowRight,
+  Search,
+} from "lucide-react";
+import MvpService from "../services/mvpService";
 
-const subjects = [
-  { name: "Data Structures", code: "CSE2002", attended: 32, total: 40, prof: "Dr. Krishnan" },
-  { name: "Operating Systems", code: "CSE2003", attended: 26, total: 38, prof: "Prof. Mehta" },
-  { name: "Computer Networks", code: "CSE2004", attended: 30, total: 35, prof: "Dr. Rajan" },
-  { name: "DBMS", code: "CSE2005", attended: 28, total: 36, prof: "Dr. Priya" },
-  { name: "Software Engineering", code: "CSE2006", attended: 22, total: 30, prof: "Prof. Anand" },
-  { name: "DBMS Lab", code: "CSE2007", attended: 12, total: 14, prof: "Dr. Priya" },
+interface SubjectAttendance {
+  id: number;
+  name: string;
+  code: string;
+  professor: string;
+  totalClasses: number;
+  attended: number;
+  percentage: number;
+  bunks: number;
+  safeBunks: number;
+  status: "safe" | "warning" | "danger";
+}
+
+const STATUS_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string }> = {
+  safe: { icon: CheckCircle, color: "var(--success-500)", bg: "rgba(16, 185, 129, 0.1)", label: "Safe" },
+  warning: { icon: AlertTriangle, color: "var(--warning-500)", bg: "rgba(245, 158, 11, 0.1)", label: "Warning" },
+  danger: { icon: XCircle, color: "var(--danger-500)", bg: "rgba(239, 68, 68, 0.1)", label: "Danger" },
+};
+
+const SEED_DATA: SubjectAttendance[] = [
+  {
+    id: 1,
+    name: "Data Structures",
+    code: "CS201",
+    professor: "Dr. Smith",
+    totalClasses: 40,
+    attended: 34,
+    percentage: 85,
+    bunks: 6,
+    safeBunks: 2,
+    status: "safe",
+  },
+  {
+    id: 2,
+    name: "Operating Systems",
+    code: "CS202",
+    professor: "Prof. Johnson",
+    totalClasses: 35,
+    attended: 24,
+    percentage: 68,
+    bunks: 11,
+    safeBunks: 0,
+    status: "danger",
+  },
+  {
+    id: 3,
+    name: "Computer Networks",
+    code: "CS203",
+    professor: "Dr. Lee",
+    totalClasses: 30,
+    attended: 28,
+    percentage: 93,
+    bunks: 2,
+    safeBunks: 4,
+    status: "safe",
+  },
+  {
+    id: 4,
+    name: "Database Management Systems",
+    code: "CS204",
+    professor: "Prof. Williams",
+    totalClasses: 25,
+    attended: 20,
+    percentage: 80,
+    bunks: 5,
+    safeBunks: 1,
+    status: "safe",
+  },
+  {
+    id: 5,
+    name: "Software Engineering",
+    code: "CS205",
+    professor: "Dr. Brown",
+    totalClasses: 20,
+    attended: 16,
+    percentage: 80,
+    bunks: 4,
+    safeBunks: 1,
+    status: "safe",
+  },
+  {
+    id: 6,
+    name: "Algorithms",
+    code: "CS206",
+    professor: "Prof. Davis",
+    totalClasses: 32,
+    attended: 26,
+    percentage: 81,
+    bunks: 6,
+    safeBunks: 2,
+    status: "safe",
+  },
 ];
 
-function getColor(pct: number) {
-  if (pct >= 80) return "#22c55e";
-  if (pct >= 75) return "#f59e0b";
-  return "#ef4444";
-}
-
-function getBunkable(attended: number, total: number) {
-  // Can bunk if: (attended / (total + x)) >= 0.75  → x = (attended - 0.75*total) / 0.75
-  const extra = Math.floor((attended - 0.75 * total) / 0.75);
-  return Math.max(0, extra);
-}
-
-function getNeeded(attended: number, total: number) {
-  // Need to attend n more: (attended + n) / (total + n) >= 0.75
-  // n = (0.75*total - attended) / 0.25
-  const pct = attended / total;
-  if (pct >= 0.75) return 0;
-  return Math.ceil((0.75 * total - attended) / 0.25);
-}
-
 export function Attendance() {
-  const [activeTab, setActiveTab] = useState<"overview" | "bunk">("overview");
-  const [dynamicSubjects, setDynamicSubjects] = useState(subjects);
-
-  const handleLogClass = (code: string, status: "present" | "absent") => {
-    setDynamicSubjects((prev) =>
-      prev.map((sub) => {
-        if (sub.code === code) {
-          return {
-            ...sub,
-            attended: status === "present" ? sub.attended + 1 : sub.attended,
-            total: sub.total + 1,
-          };
-        }
-        return sub;
-      })
-    );
-  };
+  const navigate = useNavigate();
+  const [subjects, setSubjects] = useState<SubjectAttendance[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
+    const fetchAttendance = async () => {
       try {
-        const data = await AttendanceService.getStats();
-        if (data.courses?.length) {
-          setDynamicSubjects(
-            data.courses.map((item) => ({
-              name: item.course,
-              code: item.course_code || item.course.slice(0, 3).toUpperCase(),
-              attended: item.attended,
-              total: item.total,
-              prof: item.professor || "Faculty",
-            }))
-          );
+        setLoading(true);
+        const data = await MvpService.getAttendance();
+        if (data.subjects && data.subjects.length > 0) {
+          setSubjects(data.subjects);
+        } else {
+          setSubjects(SEED_DATA);
         }
       } catch {
-        // fallback
+        setSubjects(SEED_DATA);
+      } finally {
+        setLoading(false);
       }
-    })();
+    };
+    fetchAttendance();
   }, []);
 
-  const totalAttended = dynamicSubjects.reduce((a, b) => a + b.attended, 0);
-  const totalClasses = dynamicSubjects.reduce((a, b) => a + b.total, 0);
-  const overallPct = Math.round((totalAttended / totalClasses) * 100);
+  const filteredSubjects = subjects.filter((s) => {
+    if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !s.code.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !s.professor.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
 
-  const gaugeData = [{ value: overallPct, fill: getColor(overallPct) }];
+  const overallPercentage = filteredSubjects.length > 0 
+    ? filteredSubjects.reduce((sum, s) => sum + s.percentage, 0) / filteredSubjects.length
+    : 0;
+
+  const safeCount = filteredSubjects.filter((s) => s.status === "safe").length;
+  const warningCount = filteredSubjects.filter((s) => s.status === "warning").length;
+  const dangerCount = filteredSubjects.filter((s) => s.status === "danger").length;
+
+  const totalSafeBunks = filteredSubjects.reduce((sum, s) => sum + s.safeBunks, 0);
 
   return (
-    <div className="px-4 py-3 space-y-4">
+    <div className="flex flex-col h-full bg-primary">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl" style={{ color: "#e8f0fe" }}>
-            Attendance
-          </h1>
-          <p className="text-xs" style={{ color: "#6b8cad" }}>
-            Semester 6 · Jan–May 2026
-          </p>
-        </div>
-      </div>
-
-      {/* Overall gauge */}
-      <div
-        className="rounded-2xl p-4 flex items-center gap-4"
-        style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-      >
-        <div style={{ width: 100, height: 100 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RadialBarChart
-              innerRadius="65%"
-              outerRadius="100%"
-              data={[{ value: 100, fill: "#1e3561" }, ...gaugeData]}
-              startAngle={90}
-              endAngle={-270}
-            >
-              <RadialBar dataKey="value" cornerRadius={8} />
-            </RadialBarChart>
-          </ResponsiveContainer>
-          <div
-            style={{
-              position: "relative",
-              top: -66,
-              textAlign: "center",
-              pointerEvents: "none",
-            }}
-          >
-            <p
-              style={{
-                color: getColor(overallPct),
-                fontSize: 20,
-                fontWeight: 700,
-                lineHeight: 1.2,
-              }}
-            >
-              {overallPct}%
+      <div className="px-4 py-4 shrink-0 bg-secondary border-b border-primary">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-primary">
+              Attendance
+            </h1>
+            <p className="text-sm mt-1 text-secondary">
+              Track your class attendance and bunk budget
             </p>
           </div>
         </div>
-        <div className="flex-1">
-          <p className="text-base" style={{ color: "#e8f0fe" }}>
-            Overall Attendance
-          </p>
-          <p className="text-xs mt-1" style={{ color: "#6b8cad" }}>
-            {totalAttended} / {totalClasses} classes attended
-          </p>
-          <div className="flex gap-2 mt-2">
-            <span
-              className="text-xs px-2 py-0.5 rounded-full"
-              style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
-            >
-              ↑ 2.3% this week
-            </span>
+
+        {/* Search */}
+        <div className="mt-4 relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            type="text"
+            placeholder="Search subjects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-2 py-1.5 rounded-lg text-sm bg-tertiary border border-primary text-primary placeholder:text-muted"
+          />
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-4 gap-3 mt-4">
+          <div className="rounded-xl p-3 bg-tertiary border border-primary">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-success">
+                <TrendingUp size={16} className="text-success" />
+              </div>
+              <div>
+                <p className="text-xs text-secondary">Overall</p>
+                <p className="text-lg font-semibold text-success">{overallPercentage.toFixed(1)}%</p>
+              </div>
+            </div>
           </div>
-          <p className="text-xs mt-2" style={{ color: "#8ba3c7" }}>
-            {overallPct >= 75
-              ? `You can bunk ${getBunkable(totalAttended, totalClasses)} more classes overall`
-              : `Attend ${getNeeded(totalAttended, totalClasses)} more classes to reach 75%`}
-          </p>
+          
+          <div className="rounded-xl p-3 bg-tertiary border border-primary">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-success">
+                <CheckCircle size={16} className="text-success" />
+              </div>
+              <div>
+                <p className="text-xs text-secondary">Safe</p>
+                <p className="text-lg font-semibold text-success">{safeCount}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="rounded-xl p-3 bg-tertiary border border-primary">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-warning">
+                <AlertTriangle size={16} className="text-warning" />
+              </div>
+              <div>
+                <p className="text-xs text-secondary">Warning</p>
+                <p className="text-lg font-semibold text-warning">{warningCount}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="rounded-xl p-3 bg-tertiary border border-primary">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-danger">
+                <XCircle size={16} className="text-danger" />
+              </div>
+              <div>
+                <p className="text-xs text-secondary">Danger</p>
+                <p className="text-lg font-semibold text-danger">{dangerCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bunk Budget Summary */}
+        <div className="mt-4 p-3 rounded-xl bg-tertiary border border-primary">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center badge-info">
+                <Calendar size={16} className="text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-secondary">Total Safe Bunks This Week</p>
+                <p className="text-xl font-semibold text-primary">{totalSafeBunks}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate("/finance")}
+              className="text-xs flex items-center gap-1 text-primary"
+            >
+              View Bunk Budget
+              <ArrowRight size={12} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div
-        className="flex rounded-xl p-1"
-        style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-      >
-        {(["overview", "bunk"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className="flex-1 py-2 rounded-lg text-sm transition-all"
-            style={{
-              background: activeTab === tab ? "#3b82f6" : "transparent",
-              color: activeTab === tab ? "#fff" : "#6b8cad",
-            }}
-          >
-            {tab === "overview" ? "Subject-wise" : "Bunk Analyzer 🧠"}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "overview" && (
-        <div className="space-y-3">
-          {dynamicSubjects.map((sub) => {
-            const pct = Math.round((sub.attended / sub.total) * 100);
-            const color = getColor(pct);
-            const bunkable = getBunkable(sub.attended, sub.total);
-            const needed = getNeeded(sub.attended, sub.total);
-            return (
-              <div
-                key={sub.code}
-                className="rounded-2xl p-3"
-                style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-              >
-                <div className="flex justify-between items-start">
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {/* Subject List */}
+        {filteredSubjects.map((subject) => {
+          const config = STATUS_CONFIG[subject.status];
+          return (
+            <div
+              key={subject.id}
+              className="rounded-xl p-3 bg-card border border-primary"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 badge-success">
+                    <config.icon size={18} className={subject.status === 'safe' ? 'text-success' : subject.status === 'warning' ? 'text-warning' : 'text-danger'} />
+                  </div>
                   <div>
-                    <p className="text-sm" style={{ color: "#e8f0fe" }}>
-                      {sub.name}
+                    <p className="text-sm font-medium text-primary">
+                      {subject.name}
                     </p>
-                    <p className="text-xs" style={{ color: "#6b8cad" }}>
-                      {sub.code} · {sub.prof}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className="text-sm px-2 py-0.5 rounded-full"
-                      style={{ background: `${color}22`, color }}
-                    >
-                      {pct}%
-                    </span>
-                    <p className="text-[10px] mt-0.5" style={{ color: "#6b8cad" }}>
-                      {sub.attended}/{sub.total}
+                    <p className="text-xs text-secondary">
+                      {subject.code} · {subject.professor}
                     </p>
                   </div>
                 </div>
-                <div
-                  className="h-1.5 rounded-full mt-2 overflow-hidden"
-                  style={{ background: "#1e3561" }}
-                >
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${pct}%`, background: color }}
-                  />
-                </div>
-                {pct < 75 && (
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <AlertTriangle size={11} style={{ color: "#ef4444" }} />
-                    <p className="text-[10px]" style={{ color: "#ef4444" }}>
-                      Attend {needed} more classes to reach 75%
-                    </p>
+                <div className="text-right">
+                  <div className="flex items-center gap-2">
+                    <div className={`text-xs ${subject.status === 'safe' ? 'text-success' : subject.status === 'warning' ? 'text-warning' : 'text-danger'}`}>
+                      {config.label}
+                    </div>
+                    <div className="text-lg font-semibold text-primary">
+                      {subject.percentage}%
+                    </div>
                   </div>
-                )}
-                
-                <div className="flex justify-between items-center mt-3 pt-2" style={{ borderTop: "1px dashed #1e3561" }}>
-                  <p className="text-[10px]" style={{ color: "#6b8cad" }}>Log Class:</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleLogClass(sub.code, "present")}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all active:scale-95"
-                      style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)" }}
-                    >
-                      ✅ Attended
-                    </button>
-                    <button
-                      onClick={() => handleLogClass(sub.code, "absent")}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all active:scale-95"
-                      style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}
-                    >
-                      ❌ Bunked
-                    </button>
-                  </div>
+                  <p className="text-xs mt-1 text-secondary">
+                    {subject.attended}/{subject.totalClasses} classes
+                  </p>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
 
-      {activeTab === "bunk" && (
-        <div className="space-y-3">
-          <div
-            className="rounded-2xl p-3 flex items-start gap-2"
-            style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)" }}
-          >
-            <Zap size={14} style={{ color: "#3b82f6" }} />
-            <p className="text-xs" style={{ color: "#8ba3c7" }}>
-              AI-powered bunk advisor. These are safe skips based on your current attendance and upcoming classes.
+              {/* Progress Bar */}
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-secondary">Bunks: {subject.bunks}</span>
+                  <span className={`text-xs ${subject.safeBunks > 0 ? 'text-success' : 'text-danger'}`}>
+                    Safe: {subject.safeBunks}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden bg-border-primary">
+                  <div
+                    className={`h-full rounded-full ${subject.percentage >= 75 ? 'bg-success-500' : subject.percentage >= 65 ? 'bg-warning-500' : 'bg-danger-500'}`}
+                    style={{ width: `${subject.percentage}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {filteredSubjects.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Users size={48} className="text-primary" />
+            <p className="text-sm mt-4 text-secondary">
+              No subjects found matching your search
             </p>
           </div>
+        )}
 
-          {dynamicSubjects.map((sub) => {
-            const pct = Math.round((sub.attended / sub.total) * 100);
-            const color = getColor(pct);
-            const bunkable = getBunkable(sub.attended, sub.total);
-            const needed = getNeeded(sub.attended, sub.total);
-            const canBunk = bunkable > 0;
-            return (
-              <div
-                key={sub.code}
-                className="rounded-2xl p-3"
-                style={{ background: "#0a1628", border: "1px solid #1e3561" }}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm" style={{ color: "#e8f0fe" }}>
-                      {sub.name}
-                    </p>
-                    <p className="text-xs" style={{ color: "#6b8cad" }}>
-                      Current: {pct}%
-                    </p>
-                  </div>
-                  {canBunk ? (
-                    <div className="text-right">
-                      <div
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-xl"
-                        style={{ background: "rgba(34,197,94,0.15)" }}
-                      >
-                        <CheckCircle size={12} style={{ color: "#22c55e" }} />
-                        <span className="text-xs" style={{ color: "#22c55e" }}>
-                          Skip {bunkable}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-xl"
-                      style={{ background: "rgba(239,68,68,0.15)" }}
-                    >
-                      <TrendingDown size={12} style={{ color: "#ef4444" }} />
-                      <span className="text-xs" style={{ color: "#ef4444" }}>
-                        Need {needed}
-                      </span>
-                    </div>
-                  )}
-                </div>
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2">
+              {[0, 1, 2].map((i) => (
                 <div
-                  className="h-1.5 rounded-full mt-2 overflow-hidden"
-                  style={{ background: "#1e3561" }}
-                >
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${pct}%`, background: color }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1">
-                  <p className="text-[10px]" style={{ color: "#6b8cad" }}>
-                    {sub.attended}/{sub.total} attended
-                  </p>
-                  <p className="text-[10px]" style={{ color: pct >= 75 ? "#22c55e" : "#ef4444" }}>
-                    After skip: {bunkable > 0 ? Math.round(((sub.attended) / (sub.total + 1)) * 100) : pct}%
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  key={i}
+                  className="w-2 h-2 rounded-full bg-primary"
+                  style={{
+                    animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-      <div className="h-2" />
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-warning-900/20 border border-warning-500">
+            <AlertTriangle size={16} className="text-warning" />
+            <p className="text-sm text-warning-400">{error}</p>
+          </div>
+        )}
+      </div>
+
+
     </div>
   );
 }

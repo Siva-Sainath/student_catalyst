@@ -129,30 +129,28 @@ export function Jobs() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)}>
-          <ArrowLeft size={20} style={{ color: "#6b8cad" }} />
+          <ArrowLeft size={20} className="text-secondary" />
         </button>
         <div>
-          <h1 className="text-xl" style={{ color: "#e8f0fe" }}>
+          <h1 className="text-xl text-primary">
             Jobs & Internships
           </h1>
-          <p className="text-xs" style={{ color: "#6b8cad" }}>
-            {jobsData.length} opportunities • Updated today
+          <p className="text-xs text-secondary">
+            {jobsData.length} opportunities &middot; Updated today
           </p>
         </div>
       </div>
 
       {/* Search */}
       <div
-        className="flex items-center gap-2 rounded-xl px-3 py-2"
-        style={{ background: "#0a1628", border: "1px solid #1e3561" }}
+        className="flex items-center gap-2 rounded-xl px-3 py-2 bg-secondary border border-primary"
       >
-        <Search size={15} style={{ color: "#6b8cad" }} />
+        <Search size={15} className="text-secondary" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search companies, roles..."
-          className="flex-1 bg-transparent outline-none text-sm"
-          style={{ color: "#e8f0fe" }}
+          className="flex-1 bg-transparent outline-none text-sm text-primary"
         />
       </div>
 
@@ -164,9 +162,9 @@ export function Jobs() {
             onClick={() => setFilter(f)}
             className="px-3 py-1.5 rounded-full text-xs shrink-0 transition-all"
             style={{
-              background: filter === f ? "#3b82f6" : "#0a1628",
-              color: filter === f ? "#fff" : "#6b8cad",
-              border: `1px solid ${filter === f ? "#3b82f6" : "#1e3561"}`,
+              background: filter === f ? "var(--primary-500)" : "var(--bg-hover)",
+              color: filter === f ? "var(--neutral-50)" : "var(--text-muted)",
+              border: `1px solid ${filter === f ? "var(--primary-500)" : "var(--border-primary)"}`,
             }}
           >
             {f}
@@ -179,32 +177,29 @@ export function Jobs() {
         {filtered.map((job, i) => (
           <div
             key={i}
-            className="rounded-2xl p-4"
-            style={{ background: "#0a1628", border: "1px solid #1e3561" }}
+            className="rounded-2xl p-4 bg-secondary border border-primary"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-3 flex-1">
                 <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0"
-                  style={{ background: "#0d1f3c" }}
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0 bg-tertiary border border-primary"
                 >
                   {job.logo}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm" style={{ color: "#e8f0fe" }}>
+                    <p className="text-sm text-primary">
                       {job.role}
                     </p>
                     {job.new && (
                       <span
-                        className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0"
-                        style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e" }}
+                        className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0 badge-success"
                       >
                         NEW
                       </span>
                     )}
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: "#6b8cad" }}>
+                  <p className="text-xs mt-0.5 text-secondary">
                     {job.company}
                   </p>
                 </div>
@@ -219,22 +214,24 @@ export function Jobs() {
               >
                 <Bookmark
                   size={16}
-                  fill={bookmarked.has(i) ? "#3b82f6" : "none"}
-                  style={{ color: bookmarked.has(i) ? "#3b82f6" : "#4a6585" }}
+                  fill={bookmarked.has(i) ? "var(--primary-500)" : "none"}
+                  style={{
+                    color: bookmarked.has(i) ? "var(--primary-500)" : "var(--text-muted)"
+                  }}
                 />
               </button>
             </div>
 
             <div className="flex items-center gap-4 mt-3">
               <div className="flex items-center gap-1">
-                <MapPin size={11} style={{ color: "#6b8cad" }} />
-                <span className="text-xs" style={{ color: "#8ba3c7" }}>
+                <MapPin size={11} className="text-secondary" />
+                <span className="text-xs text-secondary">
                   {job.location}
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Clock size={11} style={{ color: "#6b8cad" }} />
-                <span className="text-xs" style={{ color: "#8ba3c7" }}>
+                <Clock size={11} className="text-secondary" />
+                <span className="text-xs text-secondary">
                   {job.daysLeft}d left
                 </span>
               </div>
@@ -245,7 +242,7 @@ export function Jobs() {
                     job.type === "Internship"
                       ? "rgba(59,130,246,0.15)"
                       : "rgba(139,92,246,0.15)",
-                  color: job.type === "Internship" ? "#3b82f6" : "#8b5cf6",
+                  color: job.type === "Internship" ? "var(--primary-500)" : "var(--secondary-500)",
                 }}
               >
                 {job.type}
@@ -256,27 +253,25 @@ export function Jobs() {
               {job.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-[10px] px-2 py-0.5 rounded-full"
-                  style={{ background: "#0d1f3c", color: "#8ba3c7", border: "1px solid #1e3561" }}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-tertiary text-secondary border border-primary"
                 >
                   {tag}
                 </span>
               ))}
             </div>
 
-            <div className="flex justify-between items-center mt-3 pt-3" style={{ borderTop: "1px solid #1e3561" }}>
+            <div className="flex justify-between items-center mt-3 pt-3 border-t border-primary">
               <div>
-                <p className="text-xs" style={{ color: "#6b8cad" }}>
+                <p className="text-xs text-secondary">
                   Stipend / CTC
                 </p>
-                <p className="text-sm" style={{ color: "#22c55e" }}>
+                <p className="text-sm text-success">
                   {job.stipend}
                 </p>
               </div>
               <button
                 onClick={() => window.open((job as any).link || "https://careers.google.com", "_blank")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all active:scale-95"
-                style={{ background: "#3b82f6", color: "#fff" }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all active:scale-95 btn-primary"
               >
                 Apply
                 <ExternalLink size={11} />

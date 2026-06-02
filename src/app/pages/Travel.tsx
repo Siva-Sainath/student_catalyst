@@ -82,13 +82,13 @@ export function Travel() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)}>
-          <ArrowLeft size={20} style={{ color: "#6b8cad" }} />
+          <ArrowLeft size={20} className="text-secondary" />
         </button>
         <div>
-          <h1 className="text-xl" style={{ color: "#e8f0fe" }}>
+          <h1 className="text-xl text-primary">
             Travel Planner
           </h1>
-          <p className="text-xs" style={{ color: "#6b8cad" }}>
+          <p className="text-xs text-secondary">
             Day scholar transport assistant
           </p>
         </div>
@@ -96,38 +96,34 @@ export function Travel() {
 
       {/* Route input */}
       <div
-        className="rounded-2xl p-4 space-y-3"
-        style={{ background: "#0a1628", border: "1px solid #1e3561" }}
+        className="rounded-2xl p-4 space-y-3 bg-secondary border border-primary"
       >
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center gap-1">
-            <div className="w-2 h-2 rounded-full" style={{ background: "#3b82f6" }} />
-            <div className="w-0.5 h-6" style={{ background: "#1e3561" }} />
-            <div className="w-2 h-2 rounded-full" style={{ background: "#22c55e" }} />
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <div className="w-0.5 h-6 bg-border-primary" />
+            <div className="w-2 h-2 rounded-full bg-success" />
           </div>
           <div className="flex-1 space-y-2">
             <div
-              className="rounded-xl px-3 py-2"
-              style={{ background: "#0d1f3c", border: "1px solid #1e3561" }}
+              className="rounded-xl px-3 py-2 bg-tertiary border border-primary"
             >
-              <p className="text-[10px]" style={{ color: "#6b8cad" }}>
+              <p className="text-[10px] text-muted">
                 FROM
               </p>
               <input
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="bg-transparent outline-none text-sm w-full"
-                style={{ color: "#e8f0fe" }}
+                className="bg-transparent outline-none text-sm w-full text-primary"
               />
             </div>
             <div
-              className="rounded-xl px-3 py-2"
-              style={{ background: "#0d1f3c", border: "1px solid #1e3561" }}
+              className="rounded-xl px-3 py-2 bg-tertiary border border-primary"
             >
-              <p className="text-[10px]" style={{ color: "#6b8cad" }}>
+              <p className="text-[10px] text-muted">
                 TO
               </p>
-              <p className="text-sm" style={{ color: "#e8f0fe" }}>
+              <p className="text-sm text-primary">
                 VIT Chennai
               </p>
             </div>
@@ -135,8 +131,7 @@ export function Travel() {
         </div>
         <button
           onClick={planRoute}
-          className="w-full py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
-          style={{ background: "#3b82f6", color: "#fff" }}
+          className="w-full py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 btn-primary"
         >
           <Navigation size={15} />
           {planning ? "Planning..." : "Plan My Route"}
@@ -154,7 +149,7 @@ export function Travel() {
           }}
         >
           <span className="text-sm">{alert.type === "warning" ? "⚠️" : "🔴"}</span>
-          <p className="text-xs" style={{ color: alert.type === "warning" ? "#fbbf24" : "#fca5a5" }}>
+          <p className="text-xs" style={{ color: alert.type === "warning" ? "var(--warning-400)" : "var(--danger-400)" }}>
             {alert.text}
           </p>
         </div>
@@ -162,8 +157,7 @@ export function Travel() {
 
       {/* Tabs */}
       <div
-        className="flex rounded-xl p-1"
-        style={{ background: "#0a1628", border: "1px solid #1e3561" }}
+        className="flex rounded-xl p-1 bg-secondary border border-primary"
       >
         {(["routes", "bus", "cab"] as const).map((t) => (
           <button
@@ -171,8 +165,8 @@ export function Travel() {
             onClick={() => setTab(t)}
             className="flex-1 py-2 rounded-lg text-xs transition-all"
             style={{
-              background: tab === t ? "#3b82f6" : "transparent",
-              color: tab === t ? "#fff" : "#6b8cad",
+              background: tab === t ? "var(--primary-500)" : "transparent",
+              color: tab === t ? "var(--neutral-50)" : "var(--text-muted)",
             }}
           >
             {t === "routes" ? "🗺️ Routes" : t === "bus" ? "🚌 Buses" : "🚗 Cabs"}
@@ -188,21 +182,20 @@ export function Travel() {
               onClick={() => setActiveRoute(i)}
               className="w-full rounded-2xl p-3 text-left"
               style={{
-                background: activeRoute === i ? "rgba(59,130,246,0.1)" : "#0a1628",
-                border: `1px solid ${activeRoute === i ? "#3b82f6" : "#1e3561"}`,
+                background: activeRoute === i ? "rgba(59,130,246,0.1)" : "var(--bg-secondary)",
+                border: `1px solid ${activeRoute === i ? "var(--primary-500)" : "var(--border-primary)"}`,
               }}
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm" style={{ color: "#e8f0fe" }}>
-                    {r.from} → {r.to}
+                  <p className="text-sm text-primary">
+                    {r.from} &rarr; {r.to}
                   </p>
                   <div className="flex gap-2 mt-1.5">
                     {r.modes.map((m) => (
                       <span
                         key={m}
-                        className="text-[10px] px-2 py-0.5 rounded-full"
-                        style={{ background: "#0d1f3c", color: "#8ba3c7", border: "1px solid #1e3561" }}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-tertiary text-secondary border border-primary"
                       >
                         {m}
                       </span>
@@ -210,8 +203,8 @@ export function Travel() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Clock size={12} style={{ color: "#6b8cad" }} />
-                  <span className="text-xs" style={{ color: "#3b82f6" }}>
+                  <Clock size={12} className="text-secondary" />
+                  <span className="text-xs text-primary">
                     {r.time}
                   </span>
                 </div>
@@ -226,8 +219,7 @@ export function Travel() {
           {busRoutes.map((bus, i) => (
             <div
               key={i}
-              className="rounded-2xl p-3"
-              style={{ background: "#0a1628", border: "1px solid #1e3561" }}
+              className="rounded-2xl p-3 bg-secondary border border-primary"
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
@@ -235,50 +227,50 @@ export function Travel() {
                     className="w-10 h-10 rounded-xl flex items-center justify-center"
                     style={{ background: "rgba(59,130,246,0.15)" }}
                   >
-                    <span className="text-sm" style={{ color: "#3b82f6" }}>
+                    <span className="text-sm text-primary">
                       {bus.number}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm" style={{ color: "#e8f0fe" }}>
+                    <p className="text-sm text-primary">
                       From {bus.from}
                     </p>
-                    <p className="text-xs" style={{ color: "#6b8cad" }}>
-                      {bus.stops.join(" → ")}
+                    <p className="text-xs text-secondary">
+                      {bus.stops.join(" &rarr; ")}
                     </p>
                   </div>
                 </div>
               </div>
               <div className="flex gap-4 mt-2">
                 <div>
-                  <p className="text-[10px]" style={{ color: "#6b8cad" }}>
+                  <p className="text-[10px] text-secondary">
                     Arrives
                   </p>
-                  <p className="text-xs" style={{ color: "#e8f0fe" }}>
+                  <p className="text-xs text-primary">
                     {bus.time}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px]" style={{ color: "#6b8cad" }}>
+                  <p className="text-[10px] text-secondary">
                     ETA
                   </p>
-                  <p className="text-xs" style={{ color: "#22c55e" }}>
+                  <p className="text-xs text-success">
                     {bus.eta}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px]" style={{ color: "#6b8cad" }}>
+                  <p className="text-[10px] text-secondary">
                     Seats
                   </p>
-                  <p className="text-xs" style={{ color: bus.seats < 10 ? "#f59e0b" : "#e8f0fe" }}>
+                  <p className="text-xs" style={{ color: bus.seats < 10 ? "var(--warning-500)" : "var(--text-primary)" }}>
                     {bus.seats} left
                   </p>
                 </div>
                 <div className="ml-auto">
-                  <p className="text-[10px]" style={{ color: "#6b8cad" }}>
+                  <p className="text-[10px] text-secondary">
                     Fare
                   </p>
-                  <p className="text-xs" style={{ color: "#e8f0fe" }}>
+                  <p className="text-xs text-primary">
                     {bus.fare}
                   </p>
                 </div>
@@ -293,40 +285,36 @@ export function Travel() {
           {cabOptions.map((cab, i) => (
             <div
               key={i}
-              className="rounded-2xl p-3 flex items-center gap-3"
-              style={{ background: "#0a1628", border: "1px solid #1e3561" }}
+              className="rounded-2xl p-3 flex items-center gap-3 bg-secondary border border-primary"
             >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
-                style={{ background: "#0d1f3c" }}
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 bg-tertiary border border-primary"
               >
                 {cab.icon}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm" style={{ color: "#e8f0fe" }}>
+                  <p className="text-sm text-primary">
                     {cab.type}
                   </p>
                   {cab.shared && (
                     <span
-                      className="text-[9px] px-1.5 py-0.5 rounded-full"
-                      style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
+                      className="text-[9px] px-1.5 py-0.5 rounded-full badge-success"
                     >
                       Shared
                     </span>
                   )}
                 </div>
-                <p className="text-xs" style={{ color: "#6b8cad" }}>
+                <p className="text-xs text-secondary">
                   {cab.eta} away
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm" style={{ color: "#e8f0fe" }}>
+                <p className="text-sm text-primary">
                   {cab.price}
                 </p>
                 <button
-                  className="text-xs px-2.5 py-1 rounded-lg mt-1"
-                  style={{ background: "#3b82f6", color: "#fff" }}
+                  className="text-xs px-2.5 py-1 rounded-lg mt-1 btn-primary"
                 >
                   Book
                 </button>

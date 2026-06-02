@@ -243,11 +243,19 @@ def health_check():
   except Exception as e:
     llm_error = str(e)
   
+  harness = {}
+  try:
+    from agents.hermes_harness import get_harness_status
+    harness = get_harness_status()
+  except Exception:
+    pass
+
   return {
     "status": "ok" if llm_available else "degraded",
     "model_endpoint": os.getenv("LOCAL_MODEL_ENDPOINT", "http://localhost:11434"),
     "model_available": llm_available,
     "model_error": llm_error,
+    "hermes_harness": harness,
     "timestamp": datetime.utcnow().isoformat(),
   }
 

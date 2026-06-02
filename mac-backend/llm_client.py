@@ -1,103 +1,80 @@
-import os
+"""Ollama client — fast chat model + optional overrides."""
+
 import json
+import os
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
+
 LOCAL_MODEL_ENDPOINT = os.getenv("LOCAL_MODEL_ENDPOINT", "http://localhost:11434")
-LOCAL_MODEL_NAME = os.getenv("LOCAL_MODEL_NAME", "deepseek-coder:7b-instruct-q4_K_M")
+CHAT_MODEL = os.getenv("CHAT_MODEL", os.getenv("LOCAL_MODEL_NAME", "mistral:7b-instruct-q4_K_M"))
 
-# Fallback responses when LLM is not available
-FALLBACK_RESPONSES = {
-    "homework": "I'm currently unable to connect to the AI model. Here's a helpful response based on your question: Please check your notes or textbook for this topic. If you need more help, try asking a more specific question.",
-    "general": "I'm currently offline but I can still help with basic information. For complex questions, please try again later when the AI model is available.",
-}
-
-
-def _clean_stream_line(line) -> str:
-  if isinstance(line, bytes):
-    line = line.decode("utf-8", errors="ignore")
-  payload = line.strip()
-  if payload.startswith("data:"):
-    payload = payload[len("data:"):].strip()
-  return payload
+FALLBACK = (
+  "AI is offline on this Mac. Start Ollama and run: "
+  "ollama pull mistral:7b-instruct-q4_K_M"
+)
 
 
-def _is_model_available() -> bool:
-  """Check if the local model endpoint is available."""
+def _ollama_body(model: str, prompt: str, temperature: float, max_tokens: int, stream: bool) -> dict:
+  return {
+    "model": model,
+    "prompt": prompt,
+    "stream": stream,
+    "options": {
+      "temperature": temperature,
+      "num_predict": max_tokens,
+      "num_ctx": int(os.getenv("OLLAMA_CONTEXT_WINDOW", "4096")),
+    },
+  }
+
+
+def _online() -> bool:
   try:
-    url = f"{LOCAL_MODEL_ENDPOINT}/api/tags"
-    response = requests.get(url, timeout=5)
-    return response.status_code == 200
+    return requests.get(f"{LOCAL_MODEL_ENDPOINT}/api/tags", timeout=3).status_code == 200
   except Exception:
     return False
 
 
-def generate(prompt: str, temperature: float = 0.3, max_tokens: int = 512) -> str:
-  # Check if model is available
-  if not _is_model_available():
-    return FALLBACK_RESPONSES.get("general", "AI model is not available. Please try again later.")
-  
+def generate(prompt: str, model: str | None = None, temperature: float = 0.3, max_tokens: int = 512) -> str:
+  if not _online():
+    return FALLBACK
   url = f"{LOCAL_MODEL_ENDPOINT}/api/generate"
-  body = {
-    "model": LOCAL_MODEL_NAME,
-    "prompt": prompt,
-    "temperature": temperature,
-    "max_tokens": max_tokens,
-    "stream": False,
-  }
-
+  body = _ollama_body(model or CHAT_MODEL, prompt, temperature, max_tokens, False)
   try:
-    response = requests.post(url, json=body, timeout=60)
-    response.raise_for_status()
-    data = response.json()
-    if isinstance(data, dict) and data.get("error"):
-      raise RuntimeError(data["error"])
-    if isinstance(data, dict) and data.get("response"):
-      return data["response"]
-    return data.get("completion") or data.get("text") or FALLBACK_RESPONSES.get("general")
-  except Exception as e:
-    print(f"LLM generation error: {e}")
-    return FALLBACK_RESPONSES.get("general")
+    r = requests.post(url, json=body, timeout=int(os.getenv("LLM_TIMEOUT", "120")))
+    r.raise_for_status()
+    data = r.json()
+    return data.get("response") or data.get("completion") or ""
+  except Exception as exc:
+    print(f"llm generate: {exc}")
+    return FALLBACK
 
 
-def stream_generate(prompt: str, temperature: float = 0.3, max_tokens: int = 512):
-  # Check if model is available
-  if not _is_model_available():
-    # Return fallback as a single yield
-    yield FALLBACK_RESPONSES.get("homework", FALLBACK_RESPONSES.get("general"))
+def stream_generate(prompt: str, model: str | None = None, temperature: float = 0.35, max_tokens: int = 600):
+  if not _online():
+    yield FALLBACK
     return
-  
   url = f"{LOCAL_MODEL_ENDPOINT}/api/generate"
-  body = {
-    "model": LOCAL_MODEL_NAME,
-    "prompt": prompt,
-    "temperature": temperature,
-    "max_tokens": max_tokens,
-    "stream": True,
-  }
-
+  body = _ollama_body(model or CHAT_MODEL, prompt, temperature, max_tokens, True)
   try:
-    with requests.post(url, json=body, stream=True, timeout=300) as response:
-      response.raise_for_status()
-      for raw_line in response.iter_lines(decode_unicode=True):
-        if not raw_line:
+    with requests.post(url, json=body, stream=True, timeout=300) as r:
+      r.raise_for_status()
+      for raw in r.iter_lines(decode_unicode=True):
+        if not raw:
           continue
-        line = _clean_stream_line(raw_line)
-        if not line:
-          continue
+        line = raw.strip()
+        if line.startswith("data:"):
+          line = line[5:].strip()
         try:
           payload = json.loads(line)
         except json.JSONDecodeError:
           continue
-        if payload.get("token"):
-          yield payload["token"]
-        elif payload.get("response"):
-          yield payload["response"]
-        elif payload.get("data") and isinstance(payload["data"], dict):
-          text = payload["data"].get("text")
-          if text:
-            yield text
-  except Exception as e:
-    print(f"LLM streaming error: {e}")
-    yield FALLBACK_RESPONSES.get("homework", FALLBACK_RESPONSES.get("general"))
+        if payload.get("done"):
+          break
+        chunk = payload.get("response") or payload.get("token") or ""
+        if chunk:
+          yield chunk
+  except Exception as exc:
+    print(f"llm stream: {exc}")
+    yield FALLBACK

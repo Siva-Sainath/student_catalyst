@@ -255,7 +255,7 @@ export class ApiClient {
   // ===== Voice =====
 
   static async executeVoiceCommand(text: string): Promise<ApiResponse> {
-    return this.request("/agent/voice/command", {
+    return this.request("/agent/voice/command/enhanced", {
       method: "POST",
       body: JSON.stringify({ text }),
     });

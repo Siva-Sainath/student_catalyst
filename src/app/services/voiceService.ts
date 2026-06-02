@@ -8,6 +8,7 @@ export interface VoiceCommandResult {
   action: string;
   params: Record<string, any>;
   response: string;
+  route?: string | null;
 }
 
 // Timeout for voice commands (10 seconds)

@@ -1,6 +1,5 @@
-import json
-from llm_client import stream_generate
 from models import SessionLocal, ChatMessage, User
+from agents.hermes_harness import stream as harness_stream, task_for_text
 
 
 def build_homework_prompt(user: User, message: str, topic: str) -> str:
@@ -16,7 +15,8 @@ def build_homework_prompt(user: User, message: str, topic: str) -> str:
 
 def stream_homework_response(user: User, message: str, topic: str):
   prompt = build_homework_prompt(user, message, topic)
-  for token in stream_generate(prompt, temperature=0.35, max_tokens=600):
+  task = task_for_text(message, topic)
+  for token in harness_stream(prompt, task=task, text_hint=f"{topic} {message}", temperature=0.35, max_tokens=600):
     yield token
 
 

@@ -98,6 +98,22 @@ export class MvpService {
   }) {
     return this.authedGet(() => ApiClient.createMvpSchedule(payload));
   }
+
+  // ===== Attendance =====
+
+  static async getAttendance() {
+    return this.authedGet(() => ApiClient.getAttendanceStats());
+  }
+
+  // ===== Finance =====
+
+  static async getBunkBudget() {
+    return this.authedGet(() => ApiClient.getFinanceInsights());
+  }
+
+  static async getExpenses() {
+    return this.authedGet(() => ApiClient.getFinanceInsights());
+  }
 }
 
 export default MvpService;

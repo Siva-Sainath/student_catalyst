@@ -18,7 +18,7 @@ const features = [
     desc: "Track expenses & savings",
     icon: DollarSign,
     path: "/finance",
-    color: "#22c55e",
+    color: "var(--success-500)",
     bg: "rgba(34,197,94,0.12)",
   },
   {
@@ -26,7 +26,7 @@ const features = [
     desc: "Latest opportunities",
     icon: Briefcase,
     path: "/jobs",
-    color: "#f59e0b",
+    color: "var(--warning-500)",
     bg: "rgba(245,158,11,0.12)",
   },
   {
@@ -34,7 +34,7 @@ const features = [
     desc: "Routes & transport for day scholars",
     icon: Train,
     path: "/travel",
-    color: "#06b6d4",
+    color: "var(--primary-400)",
     bg: "rgba(6,182,212,0.12)",
   },
   {
@@ -42,7 +42,7 @@ const features = [
     desc: "Track interviews & applications",
     icon: Award,
     path: "/placement",
-    color: "#8b5cf6",
+    color: "var(--secondary-500)",
     bg: "rgba(139,92,246,0.12)",
   },
   {
@@ -50,7 +50,7 @@ const features = [
     desc: "Deadlines & task manager",
     icon: ClipboardList,
     path: "/assignments",
-    color: "#f43f5e",
+    color: "var(--danger-400)",
     bg: "rgba(244,63,94,0.12)",
   },
 ];
@@ -70,10 +70,10 @@ export function More() {
     <div className="px-4 py-3 space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-xl" style={{ color: "#e8f0fe" }}>
+        <h1 className="text-xl text-primary">
           More
         </h1>
-        <p className="text-xs" style={{ color: "#6b8cad" }}>
+        <p className="text-xs text-secondary">
           All features & settings
         </p>
       </div>
@@ -93,14 +93,14 @@ export function More() {
           🧑‍💻
         </div>
         <div className="flex-1">
-          <p className="text-base" style={{ color: "#ffffff" }}>
+          <p className="text-base text-neutral-50">
             {user?.name || "Rahul Sharma"}
           </p>
-          <p className="text-xs" style={{ color: "#93c5fd" }}>
-            {user?.email || "21BCE1234@example.com"} · B.Tech CSE
+          <p className="text-xs text-secondary">
+            {user?.email || "21BCE1234@example.com"} &middot; B.Tech CSE
           </p>
           <p className="text-xs mt-0.5" style={{ color: "#bfdbfe" }}>
-            VIT Chennai · Semester 6
+            VIT Chennai &middot; Semester 6
           </p>
         </div>
         <button
@@ -113,7 +113,7 @@ export function More() {
 
       {/* Features grid */}
       <div>
-        <p className="text-xs mb-3" style={{ color: "#6b8cad" }}>
+        <p className="text-xs mb-3 text-secondary">
           FEATURES
         </p>
         <div className="space-y-2">
@@ -123,8 +123,7 @@ export function More() {
               <button
                 key={f.label}
                 onClick={() => navigate(f.path)}
-                className="w-full flex items-center gap-3 rounded-2xl p-3 text-left transition-all active:scale-[0.98]"
-                style={{ background: "#0a1628", border: "1px solid #1e3561" }}
+                className="w-full flex items-center gap-3 rounded-2xl p-3 text-left transition-all active:scale-[0.98] bg-secondary border border-primary"
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -133,14 +132,14 @@ export function More() {
                   <Icon size={18} style={{ color: f.color }} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm" style={{ color: "#e8f0fe" }}>
+                  <p className="text-sm text-primary">
                     {f.label}
                   </p>
-                  <p className="text-xs" style={{ color: "#6b8cad" }}>
+                  <p className="text-xs text-secondary">
                     {f.desc}
                   </p>
                 </div>
-                <ChevronRight size={16} style={{ color: "#2a4060" }} />
+                <ChevronRight size={16} className="text-muted" />
               </button>
             );
           })}
@@ -149,12 +148,11 @@ export function More() {
 
       {/* Settings */}
       <div>
-        <p className="text-xs mb-3" style={{ color: "#6b8cad" }}>
+        <p className="text-xs mb-3 text-secondary">
           ACCOUNT
         </p>
         <div
-          className="rounded-2xl overflow-hidden"
-          style={{ border: "1px solid #1e3561" }}
+          className="rounded-2xl overflow-hidden border border-primary"
         >
           {settings.map((item, i) => {
             const Icon = item.icon;
@@ -163,29 +161,29 @@ export function More() {
                 key={item.label}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left"
                 style={{
-                  background: "#0a1628",
-                  borderTop: i > 0 ? "1px solid #1e3561" : "none",
+                  background: "var(--bg-secondary)",
+                  borderTop: i > 0 ? "1px solid var(--border-primary)" : "none",
                 }}
               >
                 <Icon
                   size={16}
-                  style={{ color: (item as any).danger ? "#ef4444" : "#6b8cad" }}
+                  style={{ color: (item as any).danger ? "var(--danger-500)" : "var(--text-secondary)" }}
                 />
                 <span
                   className="flex-1 text-sm"
-                  style={{ color: (item as any).danger ? "#ef4444" : "#e8f0fe" }}
+                  style={{ color: (item as any).danger ? "var(--danger-500)" : "var(--text-primary)" }}
                 >
                   {item.label}
                 </span>
-                <ChevronRight size={14} style={{ color: "#2a4060" }} />
+                <ChevronRight size={14} className="text-muted" />
               </button>
             );
           })}
         </div>
       </div>
 
-      <p className="text-center text-[10px] pb-2" style={{ color: "#2a4060" }}>
-        CampusAI v1.0.0 · VIT Chennai
+      <p className="text-center text-[10px] pb-2 text-muted">
+        CampusAI v1.0.0 &middot; VIT Chennai
       </p>
     </div>
   );

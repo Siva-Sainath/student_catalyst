@@ -1,151 +1,155 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { SafeAreaView, Text, View, TextInput, Pressable, ScrollView } from "react-native";
-import * as Speech from "expo-speech";
+import React, { useEffect } from "react";
+import { NavigationContainer, DarkTheme, useNavigation } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { StatusBar } from "expo-status-bar";
+import { Text, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Api } from "./src/api";
+import { theme } from "./src/theme";
+import { HomeScreen } from "./src/screens/HomeScreen";
+import { ChatScreen } from "./src/screens/ChatScreen";
+import { FeatureScreen } from "./src/screens/FeatureScreen";
+import { Card } from "./src/components/Card";
+import { VoiceFab } from "./src/components/VoiceFab";
 
-type AppScreen = "login" | "dashboard" | "chat";
+const Tab = createBottomTabNavigator();
 
-export default function App() {
-  const [screen, setScreen] = useState<AppScreen>("login");
-  const [email, setEmail] = useState("student@vit.ac.in");
-  const [name, setName] = useState("Rahul Sharma");
-  const [prompt, setPrompt] = useState("Explain Dijkstra in simple steps");
-  const [chat, setChat] = useState("");
-  const [dashboard, setDashboard] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const navTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: theme.bg,
+    card: "#070f20",
+    border: theme.border,
+    primary: theme.primary,
+    text: theme.text,
+  },
+};
 
-  const canLogin = useMemo(() => email.includes("@"), [email]);
-
-  useEffect(() => {
-    Api.restoreToken().then(async (ok) => {
-      if (ok) {
-        setScreen("dashboard");
-        const data = await Api.getDashboard();
-        setDashboard(data);
-      }
-    });
-  }, []);
-
-  const login = async () => {
-    if (!canLogin) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await Api.loginDemo(email, name);
-      const data = await Api.getDashboard();
-      setDashboard(data);
-      setScreen("dashboard");
-    } catch (e: any) {
-      setError(e?.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const runChat = async () => {
-    setLoading(true);
-    setError(null);
-    setChat("");
-    try {
-      for await (const token of Api.streamHomework(prompt, "Algorithms")) {
-        setChat((prev) => prev + token);
-      }
-    } catch (e: any) {
-      setError(e?.message || "Chat failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const speak = () => {
-    if (chat.trim()) Speech.speak(chat);
-  };
-
+function JobsScreen() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#050e1d" }}>
-      <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: "#1e3561" }}>
-        <Text style={{ color: "#e8f0fe", fontSize: 20, fontWeight: "700" }}>Campus AI MVP</Text>
-        <Text style={{ color: "#6b8cad", fontSize: 12 }}>React Native + Mac local backend</Text>
-      </View>
-
-      {screen === "login" && (
-        <View style={{ padding: 16, gap: 12 }}>
-          <TextInput value={email} onChangeText={setEmail} style={input} placeholder="Email" placeholderTextColor="#5a7598" />
-          <TextInput value={name} onChangeText={setName} style={input} placeholder="Name" placeholderTextColor="#5a7598" />
-          <Pressable onPress={login} style={button}>
-            <Text style={buttonText}>{loading ? "Signing in..." : "Sign in (Demo Token)"}</Text>
-          </Pressable>
-          <Text style={{ color: "#6b8cad", fontSize: 12 }}>OAuth endpoints also available: `/auth/google`, `/auth/github`.</Text>
-          {error && <Text style={{ color: "#ef4444" }}>{error}</Text>}
-        </View>
-      )}
-
-      {screen !== "login" && (
-        <ScrollView style={{ padding: 16 }}>
-          <View style={card}>
-            <Text style={title}>Dashboard</Text>
-            <Text style={sub}>{dashboard?.greeting || "Loading..."}</Text>
-            <Text style={value}>Attendance: {dashboard?.student?.attendance ?? "--"}%</Text>
-            <Text style={value}>CGPA: {dashboard?.student?.cgpa ?? "--"}</Text>
-            <Text style={sub}>{dashboard?.ai_tip}</Text>
-          </View>
-
-          <View style={card}>
-            <Text style={title}>Homework AI</Text>
-            <TextInput value={prompt} onChangeText={setPrompt} style={input} placeholder="Ask a homework question" placeholderTextColor="#5a7598" />
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Pressable onPress={runChat} style={[button, { flex: 1 }]}>
-                <Text style={buttonText}>{loading ? "Thinking..." : "Ask Local Model"}</Text>
-              </Pressable>
-              <Pressable onPress={speak} style={[button, { flex: 1, backgroundColor: "#1d4ed8" }]}>
-                <Text style={buttonText}>Speak</Text>
-              </Pressable>
-            </View>
-            {!!chat && <Text style={{ color: "#d6e6ff", marginTop: 10 }}>{chat}</Text>}
-          </View>
-
-          <Pressable onPress={() => setScreen(screen === "dashboard" ? "chat" : "dashboard")} style={[button, { marginTop: 8 }]}>
-            <Text style={buttonText}>{screen === "dashboard" ? "Open Chat View" : "Back to Dashboard"}</Text>
-          </Pressable>
-        </ScrollView>
-      )}
-    </SafeAreaView>
+    <FeatureScreen
+      title="Jobs · Hermes"
+      load={async () => {
+        await Api.ensureAuth();
+        return Api.getJobs();
+      }}
+      render={(d) =>
+        (d.recommendations || []).slice(0, 8).map((j: any, i: number) => (
+          <Card key={i}>
+            <Text style={s.h}>{j.role}</Text>
+            <Text style={s.m}>{j.company} · {j.location}</Text>
+            <Text style={s.g}>Match {j.match_score}% · {j.stipend}</Text>
+          </Card>
+        ))
+      }
+    />
   );
 }
 
-const input = {
-  borderWidth: 1,
-  borderColor: "#1e3561",
-  backgroundColor: "#0a1628",
-  borderRadius: 10,
-  color: "#e8f0fe",
-  paddingHorizontal: 12,
-  paddingVertical: 10,
+function AttendanceScreen() {
+  return (
+    <FeatureScreen
+      title="Attendance"
+      load={async () => {
+        await Api.ensureAuth();
+        return Api.getAttendance();
+      }}
+      render={(d) => (
+        <>
+          <Card>
+            <Text style={s.h}>Overall {d.overall?.percentage}%</Text>
+            <Text style={s.m}>{d.insights}</Text>
+          </Card>
+          {(d.courses || []).map((c: any, i: number) => (
+            <Card key={i}>
+              <Text style={s.h}>{c.course}</Text>
+              <Text style={s.m}>{c.attended}/{c.total} · {c.percentage}%</Text>
+            </Card>
+          ))}
+        </>
+      )}
+    />
+  );
+}
+
+function MoreScreen() {
+  return (
+    <FeatureScreen
+      title="Finance"
+      load={async () => {
+        await Api.ensureAuth();
+        return Api.getFinance();
+      }}
+      render={(d) => (
+        <>
+          <Card>
+            <Text style={s.h}>₹{d.stats?.total_spent} spent</Text>
+            <Text style={s.m}>{d.insights}</Text>
+          </Card>
+          {(d.stats?.breakdown || []).map((b: any, i: number) => (
+            <Card key={i}>
+              <Text style={s.h}>{b.category}</Text>
+              <Text style={s.m}>₹{b.total} ({b.percentage}%)</Text>
+            </Card>
+          ))}
+        </>
+      )}
+    />
+  );
+}
+
+const s = {
+  h: { color: theme.text, fontSize: 15, fontWeight: "600" as const },
+  m: { color: theme.soft, fontSize: 13, marginTop: 4 },
+  g: { color: theme.success, fontSize: 12, marginTop: 6 },
 };
 
-const card = {
-  borderWidth: 1,
-  borderColor: "#1e3561",
-  backgroundColor: "#0a1628",
-  borderRadius: 12,
-  padding: 14,
-  marginBottom: 12,
-  gap: 8,
-};
+function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+  const icons: Record<string, string> = { Home: "🏠", Chat: "✨", Jobs: "💼", Attend: "📚", More: "⚙️" };
+  return (
+    <View style={{ alignItems: "center" }}>
+      <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.5 }}>{icons[label] || "•"}</Text>
+    </View>
+  );
+}
 
-const button = {
-  backgroundColor: "#2563eb",
-  borderRadius: 10,
-  paddingVertical: 11,
-  alignItems: "center" as const,
-};
+function MainTabs() {
+  const navigation = useNavigation();
 
-const buttonText = {
-  color: "#ffffff",
-  fontWeight: "600" as const,
-};
+  return (
+    <>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarStyle: { backgroundColor: "#070f20", borderTopColor: theme.border, height: 64, paddingBottom: 8 },
+          tabBarActiveTintColor: theme.primary,
+          tabBarInactiveTintColor: theme.muted,
+          tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Chat" component={ChatScreen} />
+        <Tab.Screen name="Jobs" component={JobsScreen} />
+        <Tab.Screen name="Attend" component={AttendanceScreen} />
+        <Tab.Screen name="More" component={MoreScreen} />
+      </Tab.Navigator>
+      <VoiceFab navigation={navigation} />
+    </>
+  );
+}
 
-const title = { color: "#e8f0fe", fontSize: 16, fontWeight: "700" as const };
-const sub = { color: "#8ba3c7" };
-const value = { color: "#d6e6ff" };
+export default function App() {
+  useEffect(() => {
+    Api.ensureAuth().catch(() => {});
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="light" />
+      <NavigationContainer theme={navTheme}>
+        <MainTabs />
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+}

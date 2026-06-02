@@ -6,6 +6,7 @@ import {
   Calendar,
   Grid3X3,
 } from "lucide-react";
+import { VoiceFab } from "./VoiceFab";
 
 const tabs = [
   { path: "/", label: "Home", icon: Home },
@@ -93,6 +94,8 @@ export function Layout() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
         <Outlet />
       </div>
+
+      <VoiceFab />
 
       {/* Bottom tab bar */}
       <div

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, TrendingDown, TrendingUp, Zap, Plus } from "lucide-react";
 import {
@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import FinanceService from "../services/financeService";
 
 const spending = [
   { name: "Food", value: 3200, color: "#f59e0b" },
@@ -30,8 +31,29 @@ const transactions = [
 export function Finance() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"overview" | "transactions">("overview");
+  const [dynamicSpending, setDynamicSpending] = useState(spending);
 
-  const totalSpent = spending.reduce((a, b) => a + b.value, 0);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await FinanceService.getInsights();
+        if (data.stats?.breakdown?.length) {
+          const palette = ["#f59e0b", "#06b6d4", "#3b82f6", "#8b5cf6", "#6b8cad"];
+          setDynamicSpending(
+            data.stats.breakdown.map((item, idx) => ({
+              name: item.category,
+              value: item.total,
+              color: palette[idx % palette.length],
+            }))
+          );
+        }
+      } catch {
+        // fallback
+      }
+    })();
+  }, []);
+
+  const totalSpent = dynamicSpending.reduce((a, b) => a + b.value, 0);
   const balance = 8450;
 
   return (
@@ -147,7 +169,7 @@ export function Finance() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={spending}
+                    data={dynamicSpending}
                     cx="50%"
                     cy="50%"
                     innerRadius={50}
@@ -155,7 +177,7 @@ export function Finance() {
                     paddingAngle={3}
                     dataKey="value"
                   >
-                    {spending.map((entry, index) => (
+                    {dynamicSpending.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
                   </Pie>
@@ -172,7 +194,7 @@ export function Finance() {
               </ResponsiveContainer>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {spending.map((s) => (
+              {dynamicSpending.map((s) => (
                 <div key={s.name} className="flex items-center gap-2">
                   <div
                     className="w-2.5 h-2.5 rounded-full shrink-0"
@@ -191,7 +213,7 @@ export function Finance() {
 
           {/* Category bars */}
           <div className="space-y-2">
-            {spending.map((s) => (
+            {dynamicSpending.map((s) => (
               <div
                 key={s.name}
                 className="rounded-xl p-3"

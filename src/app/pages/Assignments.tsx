@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Plus, Check, Clock, AlertTriangle, Flag, X } from "lucide-react";
+import MvpService from "../services/mvpService";
 
 type Priority = "high" | "medium" | "low";
 type Status = "pending" | "done";
@@ -50,12 +51,41 @@ export function Assignments() {
   const [newTitle, setNewTitle] = useState("");
   const [newSubject, setNewSubject] = useState("");
 
-  const toggle = (id: number) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, status: t.status === "done" ? "pending" : "done" } : t
-      )
-    );
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await MvpService.getAssignments();
+        const mapped: Task[] = (data.assignments || []).map((item: any) => {
+          const due = new Date(item.due_at);
+          const daysLeft = Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          return {
+            id: item.id,
+            title: item.title,
+            subject: item.subject,
+            due: due.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+            daysLeft,
+            priority: item.priority,
+            status: item.status === "done" ? "done" : "pending",
+            type: item.type || "Task",
+          };
+        });
+        if (mapped.length) setTasks(mapped);
+      } catch {
+        // fallback to static seed
+      }
+    })();
+  }, []);
+
+  const toggle = async (id: number) => {
+    const target = tasks.find((t) => t.id === id);
+    if (!target) return;
+    const nextStatus = target.status === "done" ? "pending" : "done";
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
+    try {
+      await MvpService.updateAssignment(id, { status: nextStatus });
+    } catch {
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: target.status } : t)));
+    }
   };
 
   const filtered = tasks.filter((t) => {
@@ -67,14 +97,16 @@ export function Assignments() {
   const overdue = pending.filter((t) => t.daysLeft < 0);
   const dueSoon = pending.filter((t) => t.daysLeft >= 0 && t.daysLeft <= 2);
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!newTitle.trim()) return;
+    const dueAt = new Date();
+    dueAt.setDate(dueAt.getDate() + 7);
     const task: Task = {
       id: Date.now(),
       title: newTitle,
       subject: newSubject || "General",
-      due: "Apr 10",
-      daysLeft: 15,
+      due: dueAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      daysLeft: 7,
       priority: "medium",
       status: "pending",
       type: "Task",
@@ -83,6 +115,32 @@ export function Assignments() {
     setNewTitle("");
     setNewSubject("");
     setShowAdd(false);
+    try {
+      await MvpService.createAssignment({
+        title: task.title,
+        subject: task.subject,
+        type: task.type.toLowerCase(),
+        priority: task.priority,
+        due_at: dueAt.toISOString(),
+      });
+      const refreshed = await MvpService.getAssignments();
+      const mapped: Task[] = (refreshed.assignments || []).map((item: any) => {
+        const due = new Date(item.due_at);
+        return {
+          id: item.id,
+          title: item.title,
+          subject: item.subject,
+          due: due.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          daysLeft: Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+          priority: item.priority,
+          status: item.status === "done" ? "done" : "pending",
+          type: item.type || "Task",
+        };
+      });
+      setTasks(mapped);
+    } catch {
+      // keep local optimistic add
+    }
   };
 
   return (

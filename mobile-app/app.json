@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Campus AI MVP",
+    "slug": "campus-ai-mvp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.college.portal.mvp"
+    },
+    "extra": {
+      "apiBaseUrl": "http://127.0.0.1:8000"
+    }
+  }
+}

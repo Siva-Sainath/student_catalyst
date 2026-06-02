@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Plus, ChevronRight, ExternalLink, Target } from "lucide-react";
+import MvpService from "../services/mvpService";
 
 type Stage = "Applied" | "OA" | "Interview" | "Offer" | "Rejected";
 
@@ -37,15 +38,82 @@ const stageColors: Record<Stage, { bg: string; text: string; border: string }> =
 export function Placement() {
   const navigate = useNavigate();
   const [filterStage, setFilterStage] = useState<Stage | "All">("All");
+  const [records, setRecords] = useState(applications);
+  const [creating, setCreating] = useState(false);
 
-  const filtered = filterStage === "All" ? applications : applications.filter((a) => a.stage === filterStage);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await MvpService.getPlacement();
+        const mapped: Application[] = (data.applications || []).map((item: any) => ({
+          company: item.company,
+          role: item.role,
+          logo: "🏢",
+          stage: item.stage as Stage,
+          date: new Date(item.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          color: "#3b82f6",
+        }));
+        if (mapped.length) setRecords(mapped);
+      } catch {
+        // fallback to local data
+      }
+    })();
+  }, []);
+
+  const filtered = filterStage === "All" ? records : records.filter((a) => a.stage === filterStage);
 
   const stats = {
-    applied: applications.length,
-    oa: applications.filter((a) => a.stage === "OA").length,
-    interviews: applications.filter((a) => a.stage === "Interview").length,
-    offers: applications.filter((a) => a.stage === "Offer").length,
-    rejected: applications.filter((a) => a.stage === "Rejected").length,
+    applied: records.length,
+    oa: records.filter((a) => a.stage === "OA").length,
+    interviews: records.filter((a) => a.stage === "Interview").length,
+    offers: records.filter((a) => a.stage === "Offer").length,
+    rejected: records.filter((a) => a.stage === "Rejected").length,
+  };
+
+  const cycleStage = async (index: number) => {
+    const stageOrder: Stage[] = ["Applied", "OA", "Interview", "Offer", "Rejected"];
+    const selected = filtered[index];
+    if (!selected) return;
+    const currentIdx = stageOrder.indexOf(selected.stage);
+    const nextStage = stageOrder[(currentIdx + 1) % stageOrder.length];
+    setRecords((prev) =>
+      prev.map((item) =>
+        item.company === selected.company && item.role === selected.role ? { ...item, stage: nextStage } : item
+      )
+    );
+    try {
+      const application = (await MvpService.getPlacement()).applications.find(
+        (a: any) => a.company === selected.company && a.role === selected.role
+      );
+      if (application) {
+        await MvpService.updatePlacement(application.id, { stage: nextStage });
+      }
+    } catch {
+      // keep optimistic update
+    }
+  };
+
+  const addQuickApplication = async () => {
+    setCreating(true);
+    try {
+      await MvpService.createPlacement({
+        company: "Campus Startup",
+        role: "Software Intern",
+        stage: "Applied",
+      });
+      const refreshed = await MvpService.getPlacement();
+      const mapped: Application[] = (refreshed.applications || []).map((item: any) => ({
+        company: item.company,
+        role: item.role,
+        logo: "🏢",
+        stage: item.stage as Stage,
+        date: new Date(item.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        color: "#3b82f6",
+      }));
+      if (mapped.length) setRecords(mapped);
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -64,10 +132,11 @@ export function Placement() {
           </p>
         </div>
         <button
+          onClick={addQuickApplication}
           className="ml-auto w-8 h-8 rounded-xl flex items-center justify-center"
           style={{ background: "#3b82f6" }}
         >
-          <Plus size={16} style={{ color: "#fff" }} />
+          <Plus size={16} style={{ color: "#fff", opacity: creating ? 0.6 : 1 }} />
         </button>
       </div>
 
@@ -176,9 +245,10 @@ export function Placement() {
         {filtered.map((app, i) => {
           const sc = stageColors[app.stage];
           return (
-            <div
+            <button
               key={i}
               className="rounded-2xl p-3"
+              onClick={() => cycleStage(i)}
               style={{ background: "#0a1628", border: "1px solid #1e3561" }}
             >
               <div className="flex items-start gap-3">
@@ -220,7 +290,7 @@ export function Placement() {
                   </p>
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

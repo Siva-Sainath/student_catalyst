@@ -1,0 +1,22 @@
+# Core Framework
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.23
+
+# Authentication & Security
+pyjwt==2.8.0
+python-dotenv==1.0.0
+passlib==1.7.4
+cryptography==41.0.7
+
+# OAuth
+google-auth==2.25.2
+PyGithub==2.1.1
+
+# Data & Utilities
+faker==22.2.0
+pydantic==2.5.3
+requests==2.31.0

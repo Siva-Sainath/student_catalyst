@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Bookmark, ExternalLink, MapPin, Clock, Search } from "lucide-react";
+import JobsService from "../services/jobsService";
 
 const jobs = [
   {
@@ -14,6 +15,7 @@ const jobs = [
     daysLeft: 10,
     tags: ["React", "Python", "System Design"],
     new: true,
+    link: "https://www.google.com/about/careers/applications/jobs/results/?q=software%20engineering%20intern",
   },
   {
     company: "Microsoft",
@@ -26,6 +28,7 @@ const jobs = [
     daysLeft: 17,
     tags: ["SQL", "Product Thinking", "Azure"],
     new: true,
+    link: "https://careers.microsoft.com/us/en/search-results?keywords=software%20engineer%20intern",
   },
   {
     company: "Swiggy",
@@ -38,6 +41,7 @@ const jobs = [
     daysLeft: 25,
     tags: ["Node.js", "Kafka", "PostgreSQL"],
     new: false,
+    link: "https://careers.swiggy.com/#/",
   },
   {
     company: "Razorpay",
@@ -50,6 +54,7 @@ const jobs = [
     daysLeft: 13,
     tags: ["React", "TypeScript", "Jest"],
     new: false,
+    link: "https://razorpay.com/jobs/",
   },
   {
     company: "CRED",
@@ -62,6 +67,7 @@ const jobs = [
     daysLeft: 20,
     tags: ["Python", "ML", "SQL"],
     new: true,
+    link: "https://careers.cred.club/",
   },
   {
     company: "Zepto",
@@ -74,6 +80,7 @@ const jobs = [
     daysLeft: 36,
     tags: ["Go", "Microservices", "AWS"],
     new: false,
+    link: "https://zepto.app/careers/",
   },
 ];
 
@@ -84,8 +91,32 @@ export function Jobs() {
   const [filter, setFilter] = useState("All");
   const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
+  const [jobsData, setJobsData] = useState(jobs);
 
-  const filtered = jobs.filter((j) => {
+  useEffect(() => {
+    (async () => {
+      const result = await JobsService.getRecommendations();
+      if (result.recommendations?.length) {
+        setJobsData(
+          result.recommendations.map((job) => ({
+            company: job.company,
+            role: job.role,
+            logo: "🏢",
+            location: job.location,
+            stipend: job.stipend,
+            type: "Internship",
+            deadline: job.deadline,
+            daysLeft: 14,
+            tags: job.skills || [],
+            new: job.match_score >= 90,
+            link: job.link || "https://careers.google.com",
+          }))
+        );
+      }
+    })();
+  }, []);
+
+  const filtered = jobsData.filter((j) => {
     const matchesFilter = filter === "All" || j.type === filter || (filter === "Remote" && j.location === "Remote");
     const matchesSearch =
       j.company.toLowerCase().includes(search.toLowerCase()) ||
@@ -105,7 +136,7 @@ export function Jobs() {
             Jobs & Internships
           </h1>
           <p className="text-xs" style={{ color: "#6b8cad" }}>
-            {jobs.length} opportunities • Updated today
+            {jobsData.length} opportunities • Updated today
           </p>
         </div>
       </div>
@@ -243,7 +274,8 @@ export function Jobs() {
                 </p>
               </div>
               <button
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs"
+                onClick={() => window.open((job as any).link || "https://careers.google.com", "_blank")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all active:scale-95"
                 style={{ background: "#3b82f6", color: "#fff" }}
               >
                 Apply

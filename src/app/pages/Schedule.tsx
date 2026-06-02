@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapPin, Clock, AlertCircle, BookOpen, Zap } from "lucide-react";
+import MvpService from "../services/mvpService";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const dates = [23, 24, 25, 26, 27, 28];
@@ -51,9 +52,68 @@ const exams = [
 export function Schedule() {
   const [selectedDay, setSelectedDay] = useState(todayIndex);
   const [tab, setTab] = useState<"timetable" | "exams">("timetable");
+  const [dynamicWeek, setDynamicWeek] = useState<typeof weekSchedule | null>(null);
+  const [addingClass, setAddingClass] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await MvpService.getSchedule();
+        const mapped: Record<string, any[]> = {};
+        for (const item of data.week || []) {
+          mapped[item.day] = (item.classes || []).map((cls: any) => ({
+            subject: cls.subject,
+            time: cls.start_time,
+            end: cls.end_time,
+            room: cls.room,
+            prof: cls.faculty,
+            type: "Lecture",
+            color: cls.status === "cancelled" ? "#ef4444" : "#3b82f6",
+          }));
+        }
+        setDynamicWeek(mapped as typeof weekSchedule);
+      } catch {
+        // fallback to static schedule
+      }
+    })();
+  }, []);
 
   const currentDayKey = days[selectedDay];
-  const classes = weekSchedule[currentDayKey] || [];
+  const classes = (dynamicWeek || weekSchedule)[currentDayKey] || [];
+
+  const addStudyBlock = async () => {
+    setAddingClass(true);
+    try {
+      const now = new Date();
+      const currentDay = days[selectedDay];
+      const currentDate = now.toISOString().slice(0, 10);
+      await MvpService.createSchedule({
+        day: currentDay,
+        date: currentDate,
+        subject: "Self Study Block",
+        start_time: "18:00",
+        end_time: "19:00",
+        room: "Library",
+        faculty: "Self",
+      });
+      const data = await MvpService.getSchedule();
+      const mapped: Record<string, any[]> = {};
+      for (const item of data.week || []) {
+        mapped[item.day] = (item.classes || []).map((cls: any) => ({
+          subject: cls.subject,
+          time: cls.start_time,
+          end: cls.end_time,
+          room: cls.room,
+          prof: cls.faculty,
+          type: "Lecture",
+          color: cls.status === "cancelled" ? "#ef4444" : "#3b82f6",
+        }));
+      }
+      setDynamicWeek(mapped as typeof weekSchedule);
+    } finally {
+      setAddingClass(false);
+    }
+  };
 
   return (
     <div className="px-4 py-3 space-y-4">
@@ -125,6 +185,13 @@ export function Schedule() {
           </button>
         ))}
       </div>
+      <button
+        onClick={addStudyBlock}
+        className="w-full rounded-xl py-2 text-xs"
+        style={{ background: "#0d1f3c", border: "1px solid #1e3561", color: "#8ba3c7" }}
+      >
+        {addingClass ? "Adding..." : "Add Evening Study Block"}
+      </button>
 
       {tab === "timetable" && (
         <div className="space-y-3">

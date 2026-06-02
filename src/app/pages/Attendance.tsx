@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle, TrendingDown, TrendingUp, Zap } from "lucide-react";
 import {
   RadialBarChart,
   RadialBar,
   ResponsiveContainer,
 } from "recharts";
+import AttendanceService from "../services/attendanceService";
 
 const subjects = [
   { name: "Data Structures", code: "CSE2002", attended: 32, total: 40, prof: "Dr. Krishnan" },
@@ -37,9 +38,46 @@ function getNeeded(attended: number, total: number) {
 
 export function Attendance() {
   const [activeTab, setActiveTab] = useState<"overview" | "bunk">("overview");
+  const [dynamicSubjects, setDynamicSubjects] = useState(subjects);
 
-  const totalAttended = subjects.reduce((a, b) => a + b.attended, 0);
-  const totalClasses = subjects.reduce((a, b) => a + b.total, 0);
+  const handleLogClass = (code: string, status: "present" | "absent") => {
+    setDynamicSubjects((prev) =>
+      prev.map((sub) => {
+        if (sub.code === code) {
+          return {
+            ...sub,
+            attended: status === "present" ? sub.attended + 1 : sub.attended,
+            total: sub.total + 1,
+          };
+        }
+        return sub;
+      })
+    );
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await AttendanceService.getStats();
+        if (data.courses?.length) {
+          setDynamicSubjects(
+            data.courses.map((item) => ({
+              name: item.course,
+              code: item.course_code || item.course.slice(0, 3).toUpperCase(),
+              attended: item.attended,
+              total: item.total,
+              prof: item.professor || "Faculty",
+            }))
+          );
+        }
+      } catch {
+        // fallback
+      }
+    })();
+  }, []);
+
+  const totalAttended = dynamicSubjects.reduce((a, b) => a + b.attended, 0);
+  const totalClasses = dynamicSubjects.reduce((a, b) => a + b.total, 0);
   const overallPct = Math.round((totalAttended / totalClasses) * 100);
 
   const gaugeData = [{ value: overallPct, fill: getColor(overallPct) }];
@@ -140,7 +178,7 @@ export function Attendance() {
 
       {activeTab === "overview" && (
         <div className="space-y-3">
-          {subjects.map((sub) => {
+          {dynamicSubjects.map((sub) => {
             const pct = Math.round((sub.attended / sub.total) * 100);
             const color = getColor(pct);
             const bunkable = getBunkable(sub.attended, sub.total);
@@ -189,6 +227,26 @@ export function Attendance() {
                     </p>
                   </div>
                 )}
+                
+                <div className="flex justify-between items-center mt-3 pt-2" style={{ borderTop: "1px dashed #1e3561" }}>
+                  <p className="text-[10px]" style={{ color: "#6b8cad" }}>Log Class:</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleLogClass(sub.code, "present")}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all active:scale-95"
+                      style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)" }}
+                    >
+                      ✅ Attended
+                    </button>
+                    <button
+                      onClick={() => handleLogClass(sub.code, "absent")}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all active:scale-95"
+                      style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}
+                    >
+                      ❌ Bunked
+                    </button>
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -207,7 +265,7 @@ export function Attendance() {
             </p>
           </div>
 
-          {subjects.map((sub) => {
+          {dynamicSubjects.map((sub) => {
             const pct = Math.round((sub.attended / sub.total) * 100);
             const color = getColor(pct);
             const bunkable = getBunkable(sub.attended, sub.total);

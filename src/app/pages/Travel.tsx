@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, MapPin, Clock, Navigation, ChevronRight, Train, Bus, Car, Bike } from "lucide-react";
+import MvpService from "../services/mvpService";
 
 const popularRoutes = [
   { from: "Kelambakkam", to: "VIT Chennai", time: "25 min", modes: ["Bus", "Auto"] },
@@ -32,6 +33,49 @@ export function Travel() {
   const [from, setFrom] = useState("Kelambakkam");
   const [tab, setTab] = useState<"routes" | "bus" | "cab">("routes");
   const [activeRoute, setActiveRoute] = useState(0);
+  const [routes, setRoutes] = useState(popularRoutes);
+  const [planning, setPlanning] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await MvpService.getTravel();
+        const mapped = (data.routes || []).map((r: any) => ({
+          from: r.from,
+          to: r.to,
+          time: `${r.eta_min} min`,
+          modes: [r.mode],
+        }));
+        if (mapped.length) setRoutes(mapped);
+      } catch {
+        // fallback
+      }
+    })();
+  }, []);
+
+  const planRoute = async () => {
+    setPlanning(true);
+    try {
+      const mode = tab === "bus" ? "Bus" : tab === "cab" ? "Cab" : "Shuttle";
+      await MvpService.createTravel({
+        mode,
+        source: from,
+        destination: "VIT Chennai",
+        eta_min: 25,
+        notes: "Planned from web app",
+      });
+      const refreshed = await MvpService.getTravel();
+      const mapped = (refreshed.routes || []).map((r: any) => ({
+        from: r.from,
+        to: r.to,
+        time: `${r.eta_min} min`,
+        modes: [r.mode],
+      }));
+      if (mapped.length) setRoutes(mapped);
+    } finally {
+      setPlanning(false);
+    }
+  };
 
   return (
     <div className="px-4 py-3 space-y-4">
@@ -90,11 +134,12 @@ export function Travel() {
           </div>
         </div>
         <button
+          onClick={planRoute}
           className="w-full py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
           style={{ background: "#3b82f6", color: "#fff" }}
         >
           <Navigation size={15} />
-          Plan My Route
+          {planning ? "Planning..." : "Plan My Route"}
         </button>
       </div>
 
@@ -137,7 +182,7 @@ export function Travel() {
 
       {tab === "routes" && (
         <div className="space-y-2">
-          {popularRoutes.map((r, i) => (
+          {routes.map((r, i) => (
             <button
               key={i}
               onClick={() => setActiveRoute(i)}

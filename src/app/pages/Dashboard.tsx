@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Bell,
@@ -14,6 +15,7 @@ import {
   Clock,
   Zap,
 } from "lucide-react";
+import MvpService from "../services/mvpService";
 
 const quickActions = [
   { label: "Finance", icon: DollarSign, path: "/finance", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
@@ -24,7 +26,7 @@ const quickActions = [
   { label: "Analytics", icon: TrendingUp, path: "/attendance", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
 ];
 
-const todayClasses = [
+const fallbackTodayClasses = [
   { subject: "Data Structures", time: "9:00 AM", room: "Block A - 201", status: "upcoming" },
   { subject: "Operating Systems", time: "11:00 AM", room: "Block B - 105", status: "cancelled" },
   { subject: "Computer Networks", time: "2:00 PM", room: "Block C - 301", status: "upcoming" },
@@ -33,6 +35,37 @@ const todayClasses = [
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const [studentName, setStudentName] = useState("Rahul");
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [todayClasses, setTodayClasses] = useState(fallbackTodayClasses);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [dashboard, schedule] = await Promise.all([MvpService.getDashboard(), MvpService.getSchedule()]);
+        setDashboardData(dashboard);
+        const user = localStorage.getItem("user");
+        if (user) {
+          const parsed = JSON.parse(user);
+          if (parsed?.name) setStudentName(parsed.name.split(" ")[0]);
+        }
+        const today = new Date().toLocaleDateString("en-US", { weekday: "short" });
+        const dayData = (schedule?.week || []).find((d: any) => d.day === today) || schedule?.week?.[0];
+        if (dayData?.classes?.length) {
+          setTodayClasses(
+            dayData.classes.map((c: any) => ({
+              subject: c.subject,
+              time: `${c.start_time} ${Number(c.start_time.split(":")[0]) >= 12 ? "PM" : "AM"}`,
+              room: c.room,
+              status: c.status === "cancelled" ? "cancelled" : "upcoming",
+            }))
+          );
+        }
+      } catch {
+        // Keep static fallback UI when backend is unavailable.
+      }
+    })();
+  }, []);
 
   return (
     <div className="px-4 py-3 space-y-4">
@@ -43,7 +76,7 @@ export function Dashboard() {
             Thursday, 26 March 2026
           </p>
           <h1 className="text-xl" style={{ color: "#e8f0fe" }}>
-            Good morning, Rahul 👋
+            {dashboardData?.greeting || `Good morning, ${studentName} 👋`}
           </h1>
         </div>
         <div className="relative">
@@ -105,7 +138,7 @@ export function Dashboard() {
                 Attendance
               </p>
               <p className="text-base" style={{ color: "#4ade80" }}>
-                78.5%
+                {dashboardData?.student?.attendance ?? "78.5"}%
               </p>
             </div>
             <div>
@@ -113,7 +146,7 @@ export function Dashboard() {
                 CGPA
               </p>
               <p className="text-base" style={{ color: "#fbbf24" }}>
-                8.7
+                {dashboardData?.student?.cgpa ?? "8.7"}
               </p>
             </div>
             <div>
@@ -121,7 +154,7 @@ export function Dashboard() {
                 Credits
               </p>
               <p className="text-base" style={{ color: "#e8f0fe" }}>
-                142
+                {dashboardData?.student?.credits ?? "142"}
               </p>
             </div>
           </div>
@@ -173,11 +206,29 @@ export function Dashboard() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Bunk Left", value: "4", sub: "classes safe", color: "#22c55e", icon: "✓" },
-          { label: "Due Today", value: "2", sub: "assignments", color: "#f59e0b", icon: "📝" },
-          { label: "Exam in", value: "12d", sub: "DSA — Unit 5", color: "#3b82f6", icon: "⏱" },
-        ].map((s) => (
+          {[
+            {
+              label: "Bunk Left",
+              value: `${dashboardData?.stats?.bunk_left ?? 4}`,
+              sub: "classes safe",
+              color: "#22c55e",
+              icon: "✓",
+            },
+            {
+              label: "Due Today",
+              value: `${dashboardData?.stats?.assignments_due_today ?? 2}`,
+              sub: "assignments",
+              color: "#f59e0b",
+              icon: "📝",
+            },
+            {
+              label: "Exam in",
+              value: `${dashboardData?.stats?.exam_in_days ?? 12}d`,
+              sub: "next major exam",
+              color: "#3b82f6",
+              icon: "⏱",
+            },
+          ].map((s) => (
           <div
             key={s.label}
             className="rounded-2xl p-3 flex flex-col"
@@ -317,7 +368,7 @@ export function Dashboard() {
             AI Insight
           </p>
           <p className="text-xs mt-0.5" style={{ color: "#8ba3c7" }}>
-            You can safely skip 1 more OS class. Your attendance will still stay above 75%.
+            {dashboardData?.ai_tip || "You can safely skip 1 more OS class. Your attendance will still stay above 75%."}
           </p>
         </div>
       </div>

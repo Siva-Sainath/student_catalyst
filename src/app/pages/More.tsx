@@ -64,6 +64,7 @@ const settings = [
 
 export function More() {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
   return (
     <div className="px-4 py-3 space-y-5">
@@ -93,10 +94,10 @@ export function More() {
         </div>
         <div className="flex-1">
           <p className="text-base" style={{ color: "#ffffff" }}>
-            Rahul Sharma
+            {user?.name || "Rahul Sharma"}
           </p>
           <p className="text-xs" style={{ color: "#93c5fd" }}>
-            21BCE1234 · B.Tech CSE
+            {user?.email || "21BCE1234@example.com"} · B.Tech CSE
           </p>
           <p className="text-xs mt-0.5" style={{ color: "#bfdbfe" }}>
             VIT Chennai · Semester 6

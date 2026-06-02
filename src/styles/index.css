@@ -1,0 +1,21 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+* {
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: #050e1d;
+  overflow: hidden;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -63,7 +63,10 @@ def stream_generate(prompt: str, model: str | None = None, temperature: float = 
       for raw in r.iter_lines(decode_unicode=True):
         if not raw:
           continue
-        line = raw.strip()
+        if isinstance(raw, bytes):
+          line = raw.decode("utf-8", errors="ignore").strip()
+        else:
+          line = raw.strip()
         if line.startswith("data:"):
           line = line[5:].strip()
         try:
@@ -72,7 +75,7 @@ def stream_generate(prompt: str, model: str | None = None, temperature: float = 
           continue
         if payload.get("done"):
           break
-        chunk = payload.get("response") or payload.get("token") or ""
+        chunk = payload.get("response") or ""
         if chunk:
           yield chunk
   except Exception as exc:

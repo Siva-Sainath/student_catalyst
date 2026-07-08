@@ -14,10 +14,22 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from sqlalchemy import event
+
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./college_portal.db")
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 30})
+
+# Enable WAL mode and normal synchronous mode for concurrent read/write support
+if DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.close()
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -133,6 +145,18 @@ class MvpTravelRoute(Base):
   eta_min = Column(Integer, nullable=False, default=20)
   notes = Column(String, nullable=True, default="")
   created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class MvpCourseAttendance(Base):
+  __tablename__ = "mvp_course_attendance"
+
+  id = Column(Integer, primary_key=True, index=True)
+  user_id = Column(Integer, nullable=False, index=True)
+  subject = Column(String, nullable=False)
+  code = Column(String, nullable=False)
+  professor = Column(String, nullable=False)
+  attended = Column(Integer, nullable=False)
+  total = Column(Integer, nullable=False)
 
 
 def init_db() -> None:

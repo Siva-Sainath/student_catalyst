@@ -107,6 +107,46 @@ export class ApiClient {
   }
 
   /**
+   * Upload multipart/form-data (e.g. audio blobs for Whisper transcription).
+   * Does NOT set Content-Type — the browser fills in the boundary automatically.
+   */
+  static async postFormData<T = any>(
+    endpoint: string,
+    form: FormData
+  ): Promise<ApiResponse<T>> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const token = this.getToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: form,
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        if (response.status === 401) this.clearToken();
+        return {
+          ok: false,
+          status: response.status,
+          error: data?.detail || `HTTP ${response.status}`,
+        };
+      }
+      return { ok: true, status: response.status, data };
+    } catch (error) {
+      return {
+        ok: false,
+        status: 0,
+        error: error instanceof Error ? error.message : "Network error",
+      };
+    }
+  }
+
+
+  /**
    * Stream response from endpoint (for chat).
    */
   static async *stream<T>(
@@ -290,62 +330,62 @@ export class ApiClient {
   // ===== MVP Feature Endpoints =====
 
   static async getMvpDashboard(): Promise<ApiResponse> {
-    return this.request("/mvp/dashboard");
+    return this.request("/data/dashboard");
   }
 
   static async getMvpSchedule(): Promise<ApiResponse> {
-    return this.request("/mvp/schedule");
+    return this.request("/data/schedule");
   }
 
   static async getMvpAssignments(): Promise<ApiResponse> {
-    return this.request("/mvp/assignments");
+    return this.request("/data/assignments");
   }
 
   static async createMvpAssignment(data: any): Promise<ApiResponse> {
-    return this.request("/mvp/assignments", {
+    return this.request("/data/assignments", {
       method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   static async updateMvpAssignment(assignmentId: number, data: any): Promise<ApiResponse> {
-    return this.request(`/mvp/assignments/${assignmentId}`, {
+    return this.request(`/data/assignments/${assignmentId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
   }
 
   static async getMvpPlacement(): Promise<ApiResponse> {
-    return this.request("/mvp/placement");
+    return this.request("/data/placement");
   }
 
   static async createMvpPlacement(data: any): Promise<ApiResponse> {
-    return this.request("/mvp/placement", {
+    return this.request("/data/placement", {
       method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   static async updateMvpPlacement(applicationId: number, data: any): Promise<ApiResponse> {
-    return this.request(`/mvp/placement/${applicationId}`, {
+    return this.request(`/data/placement/${applicationId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
   }
 
   static async getMvpTravel(): Promise<ApiResponse> {
-    return this.request("/mvp/travel");
+    return this.request("/data/travel");
   }
 
   static async createMvpTravel(data: any): Promise<ApiResponse> {
-    return this.request("/mvp/travel", {
+    return this.request("/data/travel", {
       method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   static async createMvpSchedule(data: any): Promise<ApiResponse> {
-    return this.request("/mvp/schedule", {
+    return this.request("/data/schedule", {
       method: "POST",
       body: JSON.stringify(data),
     });

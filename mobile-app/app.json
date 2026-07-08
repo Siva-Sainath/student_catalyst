@@ -6,10 +6,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app requires microphone access to enable voice commands for the AI agent."
+      }
     },
     "android": {
-      "package": "com.college.portal.mvp"
+      "package": "com.college.portal.mvp",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "extra": {
       "apiBaseUrl": "http://127.0.0.1:8000"

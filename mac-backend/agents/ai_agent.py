@@ -98,7 +98,7 @@ Always provide code examples, explain concepts clearly, and help users understan
         llama_endpoint = os.getenv("LLAMA_ENDPOINT", "http://localhost:11434")
         llama_model = os.getenv("LLAMA_MODEL", "llama3.1:8b-instruct-q4_K_M")
         
-        if self._check_endpoint(llama_endpoint):
+        if self._check_endpoint(llama_endpoint) and self._model_exists(llama_endpoint, llama_model):
             self.agents["llama"] = AgentConfig(
                 name="Llama General",
                 agent_type=AgentType.LLAMA,
@@ -291,14 +291,11 @@ Be concise, accurate, and student-friendly.""",
                         payload = json.loads(line)
                     except json.JSONDecodeError:
                         continue
-                    if payload.get("token"):
-                        yield payload["token"]
-                    elif payload.get("response"):
-                        yield payload["response"]
-                    elif payload.get("data") and isinstance(payload["data"], dict):
-                        text = payload["data"].get("text")
-                        if text:
-                            yield text
+                    if payload.get("done"):
+                        break
+                    chunk = payload.get("response") or payload.get("token") or ""
+                    if chunk:
+                        yield chunk
         except Exception as e:
             print(f"AI Agent streaming error: {e}")
             yield self._fallback_response(body.get("prompt", ""))

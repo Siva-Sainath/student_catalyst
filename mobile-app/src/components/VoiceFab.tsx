@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Pressable, Text, View, StyleSheet, TextInput, Modal } from "react-native";
 import * as Speech from "expo-speech";
-import { Api } from "../api";
+import { ensureAuth, voiceCommand } from "../api";
 import { theme } from "../theme";
 
 const ACTION_SCREENS: Record<string, string> = {
@@ -22,8 +22,8 @@ export function VoiceFab({ navigation }: { navigation: any }) {
     if (!cmd || busy) return;
     setBusy(true);
     try {
-      await Api.ensureAuth();
-      const r = await Api.voice(cmd);
+      await ensureAuth();
+      const r = await voiceCommand(cmd);
       Speech.speak(r.response);
       const screen = ACTION_SCREENS[r.action];
       if (screen) navigation.navigate(screen);

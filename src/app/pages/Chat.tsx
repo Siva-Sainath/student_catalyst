@@ -19,6 +19,9 @@ import {
 import { ChatService } from "../services/chatService";
 import VoiceService from "../services/voiceService";
 import MvpService from "../services/mvpService";
+import { useBackendStatus } from "../hooks/useBackendStatus";
+import { MAC_SERVER_URL } from "../config/environment";
+import { useVoiceControlContext } from "../context/VoiceControlContext";
 
 interface Message {
   id: number;
@@ -79,169 +82,31 @@ function getAIResponse(input: string): string {
 export function Chat() {
   const navigate = useNavigate();
   const location = useLocation();
+  const backend = useBackendStatus();
+  const voice = useVoiceControlContext();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [speechSupported, setSpeechSupported] = useState<boolean>(true);
-  const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
-  const [recognition, setRecognition] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize speech recognition
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const isSupported = !!SpeechRecognition;
-    setSpeechSupported(isSupported);
-    
-    if (isSupported) {
-      const rec = new SpeechRecognition();
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.lang = "en-US";
-      rec.maxAlternatives = 1;
-      
-      rec.onstart = () => {
-        setIsRecording(true);
-        setError(null);
-        setVoiceFeedback("Listening...");
-      };
-      
-      rec.onerror = (event: any) => {
-        setIsRecording(false);
-        setVoiceFeedback(null);
-        if (event.error !== "no-speech" && event.error !== "aborted") {
-          setError(`Microphone error: ${event.error || 'Unknown error'}`);
-        }
-      };
-      
-      rec.onend = () => {
-        setIsRecording(false);
-        setVoiceFeedback(null);
-      };
-      
-      rec.onresult = (event: any) => {
-        const speechToText = event.results[0][0].transcript;
-        setInput(speechToText);
-        setIsRecording(false);
-        setVoiceFeedback("Processing...");
-        
-        // Process the voice command after a brief delay
-        setTimeout(() => {
-          if (speechToText.trim()) {
-            handleVoiceInput(speechToText);
-          }
-          setVoiceFeedback(null);
-        }, 500);
-      };
-      
-      setRecognition(rec);
-    }
-    
-    // Initialize session
     MvpService.ensureSession().catch(() => {
       console.warn("Failed to initialize demo session");
     });
-    
-    return () => {
-      if (recognition) {
-        try {
-          recognition.stop();
-        } catch (e) {
-          // Ignore errors during cleanup
-        }
-      }
-    };
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const handleVoiceInput = async (text: string) => {
-    const trimmedText = text.trim();
-    if (!trimmedText) return;
-    
-    // Check if it's a navigation command
-    const navCommands: Record<string, string> = {
-      "home": "/",
-      "dashboard": "/",
-      "assignments": "/assignments",
-      "attendance": "/attendance",
-      "schedule": "/schedule",
-      "finance": "/finance",
-      "bunk budget": "/finance",
-      "jobs": "/jobs",
-      "internships": "/jobs",
-      "placement": "/placement",
-      "placements": "/placement",
-      "travel": "/travel",
-      "more": "/more",
-      "settings": "/more",
-    };
-    
-    const lowerText = trimmedText.toLowerCase();
-    for (const [key, path] of Object.entries(navCommands)) {
-      if (lowerText.includes(key)) {
-        setVoiceFeedback(`Navigating to ${key}...`);
-        setTimeout(() => {
-          navigate(path);
-          setVoiceFeedback(null);
-        }, 1000);
-        return;
-      }
-    }
-    
-    // If not a navigation command, send as chat message
-    await sendMessage(trimmedText);
-  };
 
-  const toggleMicrophone = () => {
-    if (!speechSupported) {
-      setError("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
-      return;
-    }
-    
-    if (isRecording) {
-      // Stop recording
-      if (recognition) {
-        try {
-          recognition.stop();
-        } catch (e) {
-          // Force stop
-          setIsRecording(false);
-          setVoiceFeedback(null);
-        }
-      }
-    } else {
-      // Start recording
-      if (recognition) {
-        try {
-          // Stop any existing recognition
-          recognition.stop();
-          // Start fresh
-          setTimeout(() => {
-            recognition.start();
-          }, 100);
-        } catch (e) {
-          // Create new instance if needed
-          const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-          const newRec = new SpeechRecognition();
-          newRec.lang = "en-US";
-          newRec.onresult = recognition.onresult;
-          newRec.onerror = recognition.onerror;
-          newRec.onend = recognition.onend;
-          newRec.start();
-          setRecognition(newRec);
-        }
-      }
-    }
-  };
+
+
 
   const sendMessage = async (text?: string) => {
     const content = text || input.trim();
@@ -262,18 +127,22 @@ export function Chat() {
 
     let responseText = "";
     try {
+      await MvpService.ensureSession();
       const topic = (selectedModel as { topic?: string }).topic || "General";
       for await (const token of ChatService.streamHomeworkHelp(content, topic)) {
         responseText += token;
       }
-      
       if (!responseText.trim()) {
-        responseText = getAIResponse(content);
+        throw new Error("Empty response from server");
       }
     } catch (err) {
       console.error("Chat error:", err);
       responseText = getAIResponse(content);
-      setError("Using fallback response - AI service unavailable");
+      setError(
+        backend.ok === false
+          ? `Cannot reach backend at ${MAC_SERVER_URL}. Run: cd mac-backend && ./run.sh`
+          : "Using offline fallback — check Ollama is running (ollama serve)"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -318,9 +187,15 @@ export function Chat() {
               Campus AI
             </p>
             <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-success-500" />
-              <p className="text-[10px] text-success-500">
-                Online · Hermes Ready
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${backend.ok === false ? "bg-red-500" : backend.ok ? "bg-success-500" : "bg-amber-500"}`}
+              />
+              <p className={`text-[10px] ${backend.ok === false ? "text-red-400" : "text-success-500"}`}>
+                {backend.ok === false
+                  ? `Offline · ${backend.url}`
+                  : backend.ok
+                    ? `Connected · ${backend.detail}`
+                    : "Connecting…"}
               </p>
             </div>
           </div>
@@ -371,12 +246,12 @@ export function Chat() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {/* Voice feedback */}
-        {voiceFeedback && (
+        {voice.listening && voice.status && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/30 border border-primary-600">
             <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-primary-600">
               <Mic size={14} className="text-white" />
             </div>
-            <p className="text-sm text-primary-400">{voiceFeedback}</p>
+            <p className="text-sm text-primary-400">{voice.status}</p>
           </div>
         )}
         
@@ -548,16 +423,16 @@ export function Chat() {
           />
           <button 
             className="p-1 relative"
-            onClick={toggleMicrophone}
+            onClick={voice.toggleListen}
             disabled={isLoading}
-            title={!speechSupported ? "Speech recognition not supported" : isRecording ? "Stop recording" : "Click to speak"}
+            title={!voice.supported ? "Speech recognition requires a secure context (e.g. localhost or HTTPS)." : voice.listening ? "Stop listening" : "Voice command (same as floating mic)"}
           >
-            {isRecording && (
+            {voice.listening && (
               <span className="absolute inset-0 rounded-full animate-ping bg-blue-500 opacity-40" />
             )}
-            {isRecording ? (
+            {voice.listening ? (
               <MicOff size={18} className="text-danger" />
-            ) : !speechSupported ? (
+            ) : !voice.supported ? (
               <Mic size={18} className="text-muted" />
             ) : (
               <Mic size={18} className={isLoading ? "text-muted" : "text-primary"} />

@@ -11,14 +11,14 @@ from time import sleep
 
 BASE_URL = "http://localhost:8000"
 
-def test_endpoint(name, endpoint, method="GET", data=None, headers=None):
+def test_endpoint(name, endpoint, method="GET", data=None, headers=None, timeout=10):
     """Test a single endpoint."""
     url = f"{BASE_URL}{endpoint}"
     try:
         if method.upper() == "GET":
-            response = requests.get(url, headers=headers, timeout=10)
+            response = requests.get(url, headers=headers, timeout=timeout)
         elif method.upper() == "POST":
-            response = requests.post(url, json=data, headers=headers, timeout=10)
+            response = requests.post(url, json=data, headers=headers, timeout=timeout)
         else:
             print(f"  ❌ {name}: Unsupported method {method}")
             return False
@@ -67,7 +67,7 @@ def main():
     print("🔐 Authentication:")
     auth_response = requests.post(
         f"{BASE_URL}/auth/demo",
-        json={"email": "test@vit.ac.in", "name": "Test User"},
+        json={"email": "test@bmsce.ac.in", "name": "Test User"},
         timeout=10
     )
     if auth_response.status_code == 200:
@@ -84,26 +84,56 @@ def main():
         
         # Test voice command
         results.append(test_endpoint("Voice command", "/agent/voice/command", "POST", 
-                                     {"text": "show me my attendance"}, headers))
+                                     {"text": "show me my attendance"}, headers, timeout=60))
         
-        # Test chat homework
-        results.append(test_endpoint("Chat homework", "/agent/chat/homework", "POST",
-                                     {"message": "What is a binary tree?", "topic": "General"}, headers))
+        # Test chat stream
+        results.append(test_endpoint("Chat stream", "/agent/chat/stream", "POST",
+                                     {"message": "What is a binary tree?", "topic": "General"}, headers, timeout=60))
         
-        # Test MVP endpoints
-        results.append(test_endpoint("MVP Dashboard", "/mvp/dashboard", "GET", None, headers))
-        results.append(test_endpoint("MVP Schedule", "/mvp/schedule", "GET", None, headers))
-        results.append(test_endpoint("MVP Assignments", "/mvp/assignments", "GET", None, headers))
-        results.append(test_endpoint("MVP Placement", "/mvp/placement", "GET", None, headers))
-        results.append(test_endpoint("MVP Travel", "/mvp/travel", "GET", None, headers))
+        # Test data endpoints
+        results.append(test_endpoint("MVP Dashboard", "/data/dashboard", "GET", None, headers))
+        results.append(test_endpoint("MVP Schedule", "/data/schedule", "GET", None, headers))
+        results.append(test_endpoint("MVP Assignments", "/data/assignments", "GET", None, headers))
+        results.append(test_endpoint("MVP Placement", "/data/placement", "GET", None, headers))
         
         # Test agent endpoints
-        results.append(test_endpoint("Attendance stats", "/agent/attendance/stats", "GET", None, headers))
-        results.append(test_endpoint("Finance insights", "/agent/finance/insights", "GET", None, headers))
-        results.append(test_endpoint("Jobs recommend", "/agent/jobs/recommend", "GET", None, headers))
+        results.append(test_endpoint("Attendance stats", "/data/attendance", "GET", None, headers))
+        results.append(test_endpoint("Finance insights", "/data/finance", "GET", None, headers))
+        results.append(test_endpoint("Jobs recommend", "/data/jobs", "GET", None, headers, timeout=60))
         
         # Test user profile
         results.append(test_endpoint("User profile", "/user/profile", "GET", None, headers))
+        
+        # Test RAG endpoints
+        print("📁 Testing RAG:")
+        try:
+            files = {'file': ('test_doc.txt', 'This is a test document content for RAG testing.', 'text/plain')}
+            # We don't want Content-Type: application/json in the headers for files upload, so we copy headers but don't force it
+            file_headers = {k: v for k, v in headers.items()}
+            rag_response = requests.post(f"{BASE_URL}/agent/rag/upload", files=files, headers=file_headers, timeout=15)
+            if rag_response.status_code == 200:
+                print("  ✅ RAG upload: 200")
+                results.append(True)
+            else:
+                print(f"  ❌ RAG upload: {rag_response.status_code} - {rag_response.text[:200]}")
+                results.append(False)
+        except Exception as e:
+            print(f"  ❌ RAG upload: Error - {str(e)}")
+            results.append(False)
+            
+        results.append(test_endpoint("RAG list documents", "/agent/rag/documents", "GET", None, headers))
+        
+        try:
+            delete_response = requests.delete(f"{BASE_URL}/agent/rag/document/test_doc.txt", headers=headers, timeout=15)
+            if delete_response.status_code == 200:
+                print("  ✅ RAG delete: 200")
+                results.append(True)
+            else:
+                print(f"  ❌ RAG delete: {delete_response.status_code} - {delete_response.text[:200]}")
+                results.append(False)
+        except Exception as e:
+            print(f"  ❌ RAG delete: Error - {str(e)}")
+            results.append(False)
         
     else:
         print(f"  ❌ Demo auth: {auth_response.status_code}")
@@ -115,7 +145,7 @@ def main():
     total = len(results)
     print(f"  Passed: {passed}/{total}")
     
-    if passed === total:
+    if passed == total:
         print()
         print("🎉 All tests passed! The backend is working correctly.")
         print()

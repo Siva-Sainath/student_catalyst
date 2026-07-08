@@ -8,20 +8,20 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
 
 
 def main():
-    r = requests.post(f"{BASE}/auth/demo", json={"email": "student@vit.ac.in", name": "Rahul Sharma"}, timeout=10)
+    r = requests.post(f"{BASE}/auth/demo", json={"email": "student@bmsce.ac.in", "name": "Rahul Sharma"}, timeout=10)
     r.raise_for_status()
     token = r.json()["access_token"]
     h = {"Authorization": f"Bearer {token}"}
     paths = [
         "/health",
-        "/mvp/dashboard",
-        "/mvp/schedule",
-        "/mvp/assignments",
-        "/mvp/placement",
-        "/mvp/travel",
-        "/agent/attendance/stats",
-        "/agent/finance/insights",
-        "/agent/jobs/recommend",
+        "/data/dashboard",
+        "/data/schedule",
+        "/data/assignments",
+        "/data/placement",
+        "/data/attendance",
+        "/data/finance",
+        "/data/jobs",
+        "/user/profile",
     ]
     for p in paths:
         res = requests.get(f"{BASE}{p}", headers=h, timeout=60)

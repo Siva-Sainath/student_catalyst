@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Catalyst - Software Engineering Report</title>
+    
+    <!-- Google Fonts: Inter for UI, Outfit for Headers -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #0F52BA; /* Sapphire Blue */
+            --primary-dark: #0A3982;
+            --primary-light: #EBF3FF;
+            --text-main: #1F2937;
+            --text-muted: #4B5563;
+            --bg-main: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --border: #E5E7EB;
+            --accent: #2563EB;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            padding: 60px 80px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        /* Typography & Layout */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--primary-dark);
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-top: 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-top: 2em;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+        }
+
+        p {
+            margin-bottom: 1.25em;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-bottom: 1.25em;
+            margin-left: 2em;
+        }
+
+        li {
+            margin-bottom: 0.5em;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: var(--border);
+            margin: 3em 0;
+        }
+
+        /* Cover Page Styling */
+        .cover-page {
+            text-align: center;
+            min-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 0;
+            page-break-after: always;
+        }
+
+        .university-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .logo-container {
+            margin: 30px 0;
+        }
+
+        .logo-container img {
+            max-width: 140px;
+        }
+
+        .report-subtitle {
+            font-size: 1.25rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .report-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-top: 0;
+            margin-bottom: 40px;
+            line-height: 1.2;
+        }
+
+        .author-section {
+            margin: 40px 0;
+            font-size: 1.1rem;
+        }
+
+        .author-section p {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .guidance-section {
+            margin: 40px 0;
+            border-top: 1px dashed var(--border);
+            padding-top: 30px;
+        }
+
+        .guidance-section p {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .footer-section {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: auto;
+        }
+
+        .footer-section p {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #FBFDFE;
+        }
+
+        /* Code & Mermaid */
+        code {
+            background-color: #F3F4F6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        pre {
+            background-color: #1F2937;
+            color: #F9FAFB;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5em 0;
+        }
+
+        .mermaid {
+            background-color: transparent !important;
+            border: none !important;
+            display: flex;
+            justify-content: center;
+            margin: 2em 0;
+            width: 100%;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            body {
+                background-color: #FFFFFF;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+                border: none;
+            }
+
+            .cover-page {
+                height: 98vh;
+                page-break-after: always;
+            }
+
+            h1, h2, h3 {
+                page-break-inside: avoid;
+            }
+
+            pre, table, .mermaid {
+                page-break-inside: avoid;
+            }
+            
+            a {
+                text-decoration: none;
+                color: var(--text-main);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- Cover Page -->
+        <div class="cover-page">
+            <div>
+                <div class="university-title">Visvesvaraya Technological University, Belagavi 590018</div>
+                <div class="logo-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/9/96/Visvesvaraya_Technological_University_logo.png" alt="VTU Logo">
+                </div>
+            </div>
+            
+            <div>
+                <div class="report-subtitle">SE AAT Report on</div>
+                <div class="report-title">"Smart Campus Productivity Dashboard & Multi-Agent Assistant — STUDENT CATALYST"</div>
+                
+                <div class="author-section">
+                    <p><strong>By</strong></p>
+                    <p>Anish Balabattuni (1WN24CS039) &nbsp;&bull;&nbsp; Anish Saranath (1WN24CS041)</p>
+                    <p>Anitej Padyana (1WN24CS042) &nbsp;&bull;&nbsp; Arushi Kumari (1WN24CS051)</p>
+                </div>
+                
+                <div class="guidance-section">
+                    <p><strong>Under the Guidance of</strong></p>
+                    <p><strong>M LAKSHMI NEELIMA</strong></p>
+                    <p>Assistant Professor, Department of CSE</p>
+                    <p>BMS College of Engineering</p>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <p>SE AAT Report carried out at</p>
+                <p><strong>Department of Computer Science and Engineering</strong></p>
+                <p><strong>BMS College of Engineering</strong> (Autonomous college under VTU)</p>
+                <p>P.O. Box No.: 1908, Bull Temple Road, Bangalore-560 019</p>
+                <p><strong>2025-2026</strong></p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>VISVESVARAYA TECHNOLOGICAL UNIVERSITY, BELAGAVI 590018</h1>
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/en/9/96/Visvesvaraya_Technological_University_logo.png" alt="VTU Logo" width="160"/>
+</p>
+
+<h2>SE AAT Report on</h2>
+<h1>"Smart Campus Productivity Dashboard &amp; Multi-Agent Assistant — STUDENT CATALYST"</h1>
+<h3>By</h3>
+<ul>
+<li><strong>Anish Balabattuni (1WN24CS039)</strong></li>
+<li><strong>Anish Saranath (1WN24CS041)</strong></li>
+<li><strong>Anitej Padyana (1WN24CS042)</strong></li>
+<li><strong>Arushi Kumari (1WN24CS051)</strong></li>
+</ul>
+<h3>Under the Guidance of</h3>
+<p><strong>M LAKSHMI NEELIMA</strong><br />
+<em>Assistant Professor, Department of CSE</em><br />
+<strong>BMS College of Engineering</strong></p>
+<hr />
+<h3>SE AAT Report carried out at</h3>
+<p><strong>Department of Computer Science and Engineering</strong><br />
+<strong>BMS College of Engineering</strong><br />
+<em>(Autonomous college under VTU)</em><br />
+<em>P.O. Box No.: 1908, Bull Temple Road, Bangalore-560 019</em><br />
+<strong>2025-2026</strong></p>
+<hr />
+<h2>TABLE OF CONTENTS</h2>
+<ol>
+<li><a href="#1-title-of-the-projectproduct">TITLE OF THE PROJECT/PRODUCT</a></li>
+<li><a href="#2-introduction">INTRODUCTION</a></li>
+<li><a href="#3-software-requirement-specification-srs">SOFTWARE REQUIREMENT SPECIFICATION (SRS)</a><ul>
+<li>3.1 <a href="#31-problem-statement">Problem Statement</a></li>
+<li>3.2 <a href="#32-user-requirements">User Requirements</a></li>
+<li>3.3 <a href="#33-system-requirements">System Requirements</a></li>
+<li>3.4 <a href="#34-domain-requirements">Domain Requirements</a></li>
+</ul>
+</li>
+<li><a href="#4-design-models">DESIGN MODELS</a><ul>
+<li>4.1 <a href="#41-context-model">Context Model</a></li>
+<li>4.2 <a href="#42-state-model">State Model</a></li>
+<li>4.3 <a href="#43-use-case-model">Use-case Model</a></li>
+<li>4.4 <a href="#44-sequence-model">Sequence Model</a></li>
+</ul>
+</li>
+<li><a href="#5-detailed-description-of-models">DETAILED DESCRIPTION OF MODELS</a><ul>
+<li>5.1 <a href="#51-context-model-description">Context Model Description</a></li>
+<li>5.2 <a href="#52-state-model-description">State Model Description</a></li>
+<li>5.3 <a href="#53-use-case-model-description">Use-case Model Description</a></li>
+<li>5.4 <a href="#54-sequence-model-description">Sequence Model Description</a></li>
+</ul>
+</li>
+<li><a href="#6-architectural-design">ARCHITECTURAL DESIGN</a><ul>
+<li>6.1 <a href="#61-structural-model">Structural Model</a></li>
+<li>6.2 <a href="#62-control-model">Control Model</a></li>
+</ul>
+</li>
+<li><a href="#7-detailed-design">DETAILED DESIGN</a><ul>
+<li>7.1 <a href="#71-module-design">Module Design</a></li>
+<li>7.2 <a href="#72-database-design">Database Design</a></li>
+<li>7.3 <a href="#73-api-and-process-design">API and Process Design</a></li>
+<li>7.4 <a href="#74-key-validation-rules">Key Validation Rules</a></li>
+</ul>
+</li>
+<li><a href="#8-estimation-and-schedule">ESTIMATION AND SCHEDULE</a><ul>
+<li>8.1 <a href="#81-estimation-technique-1-use-case-point-ucp">Estimation Technique 1: Use Case Point (UCP)</a></li>
+<li>8.2 <a href="#82-estimation-technique-2-bottom-up-work-breakdown">Estimation Technique 2: Bottom-up Work Breakdown</a></li>
+<li>8.3 <a href="#83-time-line-chart">Time Line Chart</a></li>
+</ul>
+</li>
+<li><a href="#9-test-cases">TEST CASES</a></li>
+<li><a href="#10-conclusion">CONCLUSION</a></li>
+</ol>
+<hr />
+<h2>1. TITLE OF THE PROJECT/PRODUCT</h2>
+<h3>STUDENT CATALYST</h3>
+<p><strong>Smart Campus Productivity Dashboard &amp; Multi-Agent Assistant</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Metadata Attribute</th>
+<th style="text-align: left;">Project Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Application Type</strong></td>
+<td style="text-align: left;">Multi-role responsive desktop &amp; mobile MVP dashboard integrated with a local, multi-agent AI assistant orchestrator.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Primary Stack</strong></td>
+<td style="text-align: left;">React (Vite + Tailwind CSS v4 + TypeScript), FastAPI (Python 3 + SQLAlchemy ORM), SQLite (WAL Concurrency Mode), Expo (React Native for Mobile App), Ollama local LLM model engine (<code>deepseek-coder:7b</code>, <code>nousresearch/hermes-2-pro-mistral:7b</code>, <code>llama3.1:8b</code>).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Core Roles</strong></td>
+<td style="text-align: left;">Student User (Participant), Campus Administrator (Manager), AI Assistant (Hermes Multi-Agent Suite).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Deployment Targets</strong></td>
+<td style="text-align: left;">macOS Backend Local Instance (M1/M2/M3 Metal Acceleration), Render/Vercel (Backend), Cloudflare Pages (Frontend Web UI), and Expo Go (Mobile App Client).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>2. INTRODUCTION</h2>
+<p><strong>Student Catalyst</strong> is a full-stack campus productivity suite and intelligent assistant designed to aggregate the scattered digital workflows of college students. In typical academic settings, students are required to navigate separate, isolated applications for attendance tracking, exam timetables, assignment priorities, internship placement statistics, budget plans, and travel schedules. This fragmentation increases student cognitive overload, leads to critical missed deadlines, and impedes proactive academic decision-making.</p>
+<p>By unifying these tools under a single dashboard, Student Catalyst allows students to view their key metrics instantly. Additionally, the application integrates a <strong>Local Multi-Agent Large Language Model (LLM)</strong> engine running via Ollama. It features specialized agents (such as <strong>Hermes</strong> for research/jobs and <strong>DeepSeek-Coder</strong> for coding queries) to provide natural-language answers, automated email drafts, homework help, and voice-command navigation. </p>
+<p>Crucially, the application operates with a multi-layered fallback strategy. If local hardware acceleration (e.g., Apple Metal GPU execution) is unavailable or the local LLM server is offline, the backend degrades gracefully to 0ms-latency keyword matching and pre-cached expert responses. This ensures that core productivity services—such as VTU 75% attendance calculations, safe bunk thresholds, and assignment lists—remain operational at all times.</p>
+<hr />
+<h2>3. SOFTWARE REQUIREMENT SPECIFICATION (SRS)</h2>
+<h3>3.1 Problem Statement</h3>
+<p>The modern university experience is highly fragmented. Student scheduling, syllabus files, and financial planning are distributed across web portals, shared spreadsheets, and message boards. Students lack a unified, context-aware interface that tracks:
+1. <strong>Attendance Recovery</strong>: Knowing exactly how many classes they can safely skip (bunk) or must attend to stay above the 75% VTU statutory minimum.
+2. <strong>Task Prioritization</strong>: Merging homework assignments with calendar dates, prioritizing them by urgency.
+3. <strong>Career Portals</strong>: Tracking internship applications, interview cycles, and placement conversions.
+4. <strong>Intelligent Assistance</strong>: Resolving queries and navigating the application through voice and text commands without requiring high-latency external cloud connections.</p>
+<h3>3.2 User Requirements</h3>
+<ul>
+<li><strong>Student Dashboard</strong>: Students must see their CGPA, earned credits, today's timetable, and overall attendance on a consolidated page.</li>
+<li><strong>Attendance Budgets</strong>: Students must view subject-by-subject attendance percentages with alert states (Safe/Warning/Danger) and real-time safe bunk counts.</li>
+<li><strong>Assignment Tracking</strong>: Students must be able to add, modify, and delete assignments, categorize them by type, and mark them as complete.</li>
+<li><strong>Assistant Integration</strong>: Students must be able to interact with the dashboard using natural language voice commands (e.g., "Show my assignments" or "Find cab routes") or text queries.</li>
+<li><strong>Budget Planning</strong>: Students must track monthly expenditures against a set limit and receive AI savings recommendations.</li>
+<li><strong>Local Offline Fallback</strong>: The app must remain responsive even when local LLM server infrastructure is stopped or loading.</li>
+</ul>
+<h3>3.3 System Requirements</h3>
+<h4>Functional Requirements</h4>
+<ul>
+<li><strong>OAuth Authentication</strong>: The system shall authenticate users via Google and GitHub OAuth, or permit a fast local demo bypass.</li>
+<li><strong>Session Management</strong>: The system shall issue and verify JSON Web Tokens (JWT) for secure, role-based route control.</li>
+<li><strong>Dynamic Timetable CRUD</strong>: The system shall support CRUD operations on student weekly timetables, mapping subjects to classrooms, timings, and professors.</li>
+<li><strong>Attendance Analysis Engine</strong>: The system shall compute overall attendance progress and safe bunk margins using current SQLite statistics.</li>
+<li><strong>Multi-Agent Rerouting</strong>: The system shall parse incoming chat prompts and dynamically delegate them to specialized LLMs (Hermes for research/jobs, DeepSeek for code) based on user intent.</li>
+<li><strong>RAG Document Indexing</strong>: The system shall allow students to upload text documents (e.g., syllabus, class notes) and perform contextual queries using locally cached text snippets.</li>
+<li><strong>Voice Command NLP Interpreter</strong>: The system shall transcribe audio files and translate natural language text into UI routing commands (e.g., navigate to attendance page).</li>
+<li><strong>Synthetic Data Generation</strong>: The system shall seed initial database tables with consistent, context-appropriate data relative to the current calendar week.</li>
+<li><strong>Streaming Responses</strong>: The system shall stream generated agent responses token-by-token back to the React front-end client using EventStream protocols.</li>
+</ul>
+<h4>Non-Functional Requirements</h4>
+<ul>
+<li><strong>Performance</strong>: Direct voice commands and keyword searches must resolve under 50ms. LLM-routed queries on Apple M-Series GPUs must deliver the first token under 2 seconds.</li>
+<li><strong>Reliability</strong>: SQLite transactions must operate under Write-Ahead Logging (WAL) and synchronous normal pragma to support concurrent dashboard reads and edits without locks.</li>
+<li><strong>Security</strong>: All API routes (except auth and health) must mandate JWT token transmission in headers.</li>
+<li><strong>Privacy</strong>: RAG processing and LLM inferences must run completely local on the user's host Mac without sending document snippets to external cloud servers.</li>
+</ul>
+<h3>3.4 Domain Requirements</h3>
+<ul>
+<li><strong>The 75% Rule</strong>: Under VTU regulations, any course attendance dropping below 75% triggers a "Danger" warning state.</li>
+<li><strong>Safe Bunk Formula</strong>: The margin of safety is calculated as:
+  $$\text{Safe Bunks} = \max\left(0, \text{Attended} - \lfloor 0.75 \times \text{Total} \rfloor\right)$$
+  If the current ratio is below 75%, the bunk margin is zero, and the system instead calculates the number of consecutive classes the student must attend to recover.</li>
+<li><strong>Placement Status Machine</strong>: Career applications move through discrete stages (<code>Applied</code> $\rightarrow$ <code>OA</code> $\rightarrow$ <code>Technical Round</code> $\rightarrow$ <code>HR Round</code> $\rightarrow$ <code>Offer</code> / <code>Rejected</code>).</li>
+<li><strong>Model Separation</strong>: Coding queries require compiler/syntax knowledge, while job matching requires profile skill-parsing. The system must prevent mixing these contexts.</li>
+</ul>
+<hr />
+<h2>4. DESIGN MODELS</h2>
+<h3>4.1 Context Model</h3>
+<p>The Context Model outlines the boundary of the Student Catalyst system and its interfaces with actors, storage models, and local model infrastructure.</p>
+<pre class="mermaid">graph TB
+  subgraph SystemBoundary ["STUDENT CATALYST PORTAL BOUNDARY"]
+    Core["Student Catalyst Core Services:<br>- OAuth JWT Authenticator<br>- Dashboard Metrics Processor<br>- Timetable & Schedule Controller<br>- Task & Assignment Manager<br>- Expense Logger & Budget Advisor<br>- Natural Language Voice Interpreter<br>- Multi-Agent RAG Indexer & Prompt Builder"]
+  end
+
+  Student["Student (User)"] -->|Interacts with Dashboard,<br>queries assistant, logs expenses| Core
+  Core -->|Streams response tokens,<br>renders metrics & bunk warnings| Student
+
+  Admin["Campus Admin"] -->|Configures courses,<br>posts timetable schedules| Core
+
+  Core <-->|Saves profiles, chat logs,<br>assignments & transactions| SQLite[("Local SQLite Database<br>(WAL Mode)")]
+
+  Core -->|Verifies access tokens| OAuth["OAuth Providers<br>(Google / GitHub)"]
+
+  Core <-->|Submits routed prompts,<br>receives LLM text chunks| Ollama["Ollama Local LLM Engine<br>(nousresearch/hermes-2-pro-mistral:7b,<br>deepseek-coder:7b-instruct-q4_K_M,<br>llama3.1:8b)"]
+</pre>
+<hr />
+<h3>4.2 State Model</h3>
+<p>The State Model maps the lifecycle states of a student's session and interaction with the intelligent assistant and database managers.</p>
+<pre class="mermaid">stateDiagram-v2
+  [*] --> Visitor : Launches Application
+  Visitor --> Authenticated : OAuth Success / Demo Login
+  Authenticated --> ViewingDashboard : Load Dashboard State
+
+  state ViewingDashboard {
+    [*] --> Idle : Renders current statistics & AI Tips
+    Idle --> InteractingWithAI : User submits text or speaks voice command
+    Idle --> DataManagement : User edits Schedule, Assignments, or Expenses
+  }
+
+  state InteractingWithAI {
+    [*] --> ParsingIntent : Core processes text input
+    ParsingIntent --> RouteVoiceCommand : Matches navigation keyword?
+    RouteVoiceCommand --> TriggerUIRouting : Yes (e.g., "Open Schedule")
+    TriggerUIRouting --> RerenderUI : Redirects React view
+
+    ParsingIntent --> SelectingAgent : No (Requires AI Reasoning)
+    SelectingAgent --> CheckOllamaOnline : Checks LLM socket
+
+    CheckOllamaOnline --> FetchRAGContext : Yes (Ollama responds)
+    FetchRAGContext --> CallLocalLLM : Chunks parsed & prompt injected
+    CallLocalLLM --> StreamTokens : Stream response chunks to UI
+
+    CheckOllamaOnline --> FallbackOffline : No (Ollama connection timeout)
+    FallbackOffline --> ReturnMockTip : Load keyword-matched static response
+    ReturnMockTip --> DisplayText
+    StreamTokens --> DisplayText
+    DisplayText --> [*]
+  }
+
+  state DataManagement {
+    [*] --> LogEntry : Capture Input fields
+    LogEntry --> ValidateFields : Check formats, constraints & bounds
+    ValidateFields --> CommitSQL : Valid -> SQLite Transaction
+    ValidateFields --> ShowValidationError : Invalid -> Alert user
+    CommitSQL --> DBUpdated : Commit changes
+    ShowValidationError --> LogEntry : Correct fields
+    DBUpdated --> [*]
+  }
+
+  RerenderUI --> Idle
+  DisplayText --> Idle
+  DBUpdated --> Idle
+</pre>
+<hr />
+<h3>4.3 Use-case Model</h3>
+<p>The Use-case Model represents the relationships between Student Users, Admins, the AI Assistant, and various system functions.</p>
+<pre class="mermaid">graph LR
+  %% Actors
+  Student((Student User))
+  Admin((Campus Admin))
+  AI((AI Assistant / Agent System))
+
+  %% Use Cases
+  subgraph UseCases ["Student Catalyst Use Cases"]
+    UC1(Authenticate via OAuth / Demo Bypass)
+    UC2(View Academic & Attendance Dashboard)
+    UC3(Calculate Bunk Budgets & Bunk Recovery)
+    UC4(Modify Schedule Timetable Events)
+    UC5(Manage Academic Assignments)
+    UC6(Query Smart Assistant via Voice/Text)
+    UC7(Upload Course Materials to RAG Index)
+    UC8(Log Finance Expenses & Budgets)
+    UC9(Search Job Opportunities & Status)
+    UC15(Populate Weekly Synthetic Campus Data)
+  end
+
+  Student --> UC1
+  Student --> UC2
+  Student --> UC3
+  Student --> UC4
+  Student --> UC5
+  Student --> UC6
+  Student --> UC8
+  Student --> UC9
+
+  Admin --> UC4
+  Admin --> UC15
+
+  AI -.-> UC6
+  AI -.-> UC7
+  AI -.-> UC9
+</pre>
+<hr />
+<h3>4.4 Sequence Model</h3>
+<p>The Sequence Model details the asynchronous communication protocol between the client front-end, FastAPI backend, local database, RAG processor, and Ollama LLM node.</p>
+<pre class="mermaid">sequenceDiagram
+  autonumber
+  actor Student as Student (React Client)
+  participant API as FastAPI Server
+  participant Router as Multi-Agent Router
+  participant RAG as RAG Document Store
+  participant LLM as Ollama local server
+  participant DB as SQLite DB
+
+  %% Scenario A: Voice-triggered Navigation
+  Note over Student, API: Scenario A: Voice-based Navigation Command
+  Student->>API: POST /agent/voice/command {"text": "please open my attendance"}
+  API->>API: Scan text matching regex constraints
+  Note over API: Matches keyword "attendance"
+  API-->>Student: HTTP 200 {"action": "attendance", "response": "Opening attendance...", "direct": true}
+
+  %% Scenario B: Smart Routing & LLM Generation
+  Note over Student, LLM: Scenario B: Multi-Agent Job Query
+  Student->>API: POST /agent/chat/stream {"message": "Suggest Python junior developer roles", "topic": "Jobs"}
+  API->>Router: Route payload to agent selector
+  Router->>Router: Identify query topic & map intent
+  Note over Router: Assigns to "Hermes Career Agent"
+  Router->>DB: Read user profile skills & GPA
+  DB-->>Router: Returns ["Python", "Machine Learning"], GPA: 8.9
+  Router->>LLM: POST /api/generate with system prompt + student context
+  loop Token Stream
+    LLM-->>API: Stream token chunks
+    API-->>Student: Push Server-Sent Events (SSE)
+  end
+
+  %% Scenario C: RAG Syllabus upload
+  Note over Student, DB: Scenario C: RAG Document Upload & Query
+  Student->>API: POST /agent/rag/upload (syllabus_dsa.txt)
+  API->>RAG: Parse text file & extract segments
+  RAG->>DB: Write document snippets with references
+  DB-->>RAG: Confirm commit
+  RAG-->>API: Document indexed successfully
+  API-->>Student: HTTP 200 {"status": "success", "filename": "syllabus_dsa.txt"}
+</pre>
+<hr />
+<h2>5. DETAILED DESCRIPTION OF MODELS</h2>
+<h3>5.1 Context Model Description</h3>
+<p>The Context Model (Section 4.1) establishes Student Catalyst as a local hub. The center of the system is the FastAPI gateway which orchestrates incoming actions. The gateway uses Google and GitHub OAuth to establish authenticated sessions. </p>
+<p>The storage boundary is defined by a local SQLite database file operating in Write-Ahead Log (WAL) mode. This configuration allows concurrent read operations by UI components and AI search scripts without causing write-blocking database lock conflicts. </p>
+<p>For AI reasoning, the gateway connects to the local Ollama socket at <code>http://localhost:11434</code>. It routes prompts to the correct models depending on the domain context, keeping all student records, chat logs, and uploaded files on the local machine.</p>
+<h3>5.2 State Model Description</h3>
+<p>The State Model (Section 4.2) details the transitions of the application. The system initializes in a <code>Visitor</code> state before moving to an <code>Authenticated</code> state. The dashboard remains in the <code>ViewingDashboard</code> state while rendering user data. </p>
+<p>When a student queries the assistant or speaks a voice command, the system enters the <code>InteractingWithAI</code> state. The FastAPI backend processes the request to identify routing actions. If a simple navigation match occurs (e.g., "go to jobs"), the frontend executes a route redirect, bypassing the LLM. </p>
+<p>If the query requires natural language processing, the system connects to Ollama. If the connection is successful, the query is combined with RAG text chunks and student skills, and the system transitions to <code>StreamTokens</code>. If Ollama is unreachable, the system triggers the <code>FallbackOffline</code> state and returns cached text templates.</p>
+<h3>5.3 Use-case Model Description</h3>
+<p>The Use-case Model (Section 4.3) isolates user roles and system operations. The <strong>Student User</strong> is the primary actor, interacting with use cases like tracking assignments, viewing attendance metrics, checking bunk budgets, logging expenses, and searching jobs. </p>
+<p>The <strong>Campus Admin</strong> represents administrative operations, interacting with schedule configurations and database seeding. </p>
+<p>The <strong>AI Assistant</strong> is an active background actor. It reads system variables, queries the SQLite RAG tables, parses syllabus files, and assists the Student User in executing natural language queries.</p>
+<h3>5.4 Sequence Model Description</h3>
+<p>The Sequence Model (Section 4.4) details three asynchronous communication processes:
+1. <strong>Scenario A (Direct Voice Command)</strong>: The student requests page navigation using voice. The FastAPI backend uses keyword mapping to resolve the target destination and returns UI routing events instantly.
+2. <strong>Scenario B (Smart Agent Chat)</strong>: The student asks a career question. The multi-agent system identifies the "Jobs" topic, selects the <strong>Hermes</strong> model, retrieves the student's skills from SQLite, and streams the generated response.
+3. <strong>Scenario C (RAG Document Store)</strong>: The student uploads a text document. The backend splits the document into text chunks, records them in SQLite, and returns an index confirmation code.</p>
+<hr />
+<h2>6. ARCHITECTURAL DESIGN</h2>
+<h3>6.1 Structural Model</h3>
+<p>The Structural Model represents the tiered organization of components. It separates user interface components from business logic validation engines and physical SQLite storage structures.</p>
+<pre class="mermaid">graph TD
+  subgraph Presentation ["Presentation Layer (Vite + React / React Native Native Client)"]
+    UI["React Frontend Views:<br>- Dashboard Screen<br>- Attendance Analytics<br>- Voice/Text Chat Console<br>- Timetable Calendar<br>- Finance Logger<br>- Job Opportunity Board"]
+    Context["Auth Context & Axios Interceptors:<br>- JWT Storage<br>- Request Headers<br>- Token Renewal Checks<br>- SSE Streaming Listeners"]
+  end
+
+  subgraph Application ["Application Layer (FastAPI Engine)"]
+    AuthService["Auth Module:<br>- OAuth Google SDK<br>- OAuth GitHub SDK<br>- Demo Login Generator<br>- Token Signer & Encoder"]
+    VoiceEngine["Voice NLP Processor:<br>- Whisper / Audio Parser<br>- Regex Pattern Matcher<br>- UI Command Router"]
+    AgentRouter["Multi-Agent Router:<br>- System Prompt Builder<br>- Hermes Model Allocator<br>- DeepSeek Model Allocator<br>- Fallback Selector"]
+    RAGEngine["RAG Document Handler:<br>- Document Parser<br>- Vector Index Optimizer<br>- SQLite RAG Lookup"]
+  end
+
+  subgraph DataLayer ["Data Access & Storage Layer"]
+    ORM["SQLAlchemy Declarative Models:<br>- User Table Schema<br>- ChatMessage Table<br>- AttendanceRecord Table<br>- TransactionRecord Table<br>- TimetableEvent Table"]
+    SQLiteDB[("SQLite DB File<br>(WAL Concurrency Mode)")]
+  end
+
+  subgraph ExternalServices ["External Nodes & LLMs"]
+    OllamaNode["Ollama Server Node:<br>- localhost:11434 socket<br>- Metal Acceleration Engine<br>- Quantized GGUF models"]
+    OAuthAPIs["OAuth Providers:<br>- Google Identity API<br>- GitHub Developer API"]
+  end
+
+  UI --> Context
+  Context --> AuthService
+  Context --> VoiceEngine
+  Context --> AgentRouter
+  AuthService --> OAuthAPIs
+  AuthService --> ORM
+  VoiceEngine --> AgentRouter
+  AgentRouter --> OllamaNode
+  AgentRouter --> RAGEngine
+  RAGEngine --> ORM
+  ORM --> SQLiteDB
+</pre>
+<hr />
+<h3>6.2 Control Model</h3>
+<p>The Control Model describes how the system validates requests, resolves user permissions, handles local LLM states, and handles errors at runtime.</p>
+<pre class="mermaid">stateDiagram-v2
+  [*] --> RequestArrives : Incoming HTTP request / command
+
+  state RequestArrives {
+    [*] --> AuthenticateJWT : Check header 'Authorization: Bearer <token>'
+    AuthenticateJWT --> TokenValid : Verify signature & exp fields
+    TokenValid --> ProceedRouting : Valid
+    TokenValid --> Error401 : Invalid / Expired -> Halt Request
+  }
+
+  Error401 --> [*]
+
+  state ProceedRouting {
+    [*] --> IdentifyCommandType : Check request path
+    IdentifyCommandType --> RESTQuery : Path: /data/* (Normal CRUD)
+    IdentifyCommandType --> AgentQuery : Path: /agent/* (AI Command)
+
+    state RESTQuery {
+      [*] --> ValidateInputRanges : Check bounds & fields
+      ValidateInputRanges --> SQLiteTx : Valid -> Open SQLite session
+      SQLiteTx --> CommitChanges : Execute SQLAlchemy queries
+      SQLiteTx --> RollbackTx : Exception caught -> Rollback
+      RollbackTx --> ReturnErrorPayload : Format safe DB error message
+      CommitChanges --> ReturnSuccessPayload : Return updated JSON values
+    }
+
+    state AgentQuery {
+      [*] --> CheckVoiceShortcut : Match navigation patterns (0ms)
+      CheckVoiceShortcut --> ReturnUIRedirect : Direct Match (e.g. "Go to Finance")
+
+      CheckVoiceShortcut --> SelectModelAgent : No Match -> Route to Multi-Agent
+      SelectModelAgent --> TestOllamaSocket : Connect to http://localhost:11434/api/tags
+
+      TestOllamaSocket --> QueryOllamaLLM : Connection verified (Ollama Active)
+      QueryOllamaLLM --> InjectContext : Retrieve student skills & RAG chunks
+      InjectContext --> BuildPrompt : Combine Prompt + context + user query
+      BuildPrompt --> StreamSSE : Initialize EventStream token push
+
+      TestOllamaSocket --> TriggerFallbackOffline : Connection Refused (Ollama Down)
+      TriggerFallbackOffline --> MatchMockCollection : Retrieve cached template matching topic
+      MatchMockCollection --> StreamMockText : Stream mock content back to client
+    }
+  }
+
+  ReturnErrorPayload --> [*]
+  ReturnSuccessPayload --> [*]
+  ReturnUIRedirect --> [*]
+  StreamSSE --> [*]
+  StreamMockText --> [*]
+</pre>
+<hr />
+<h2>7. DETAILED DESIGN</h2>
+<h3>7.1 Module Design</h3>
+<ul>
+<li><strong>Authentication and User Session Module</strong>: Manages student identity through JWT verification. Contains helpers to exchange tokens with Google and GitHub, alongside a local mock bypass to generate valid test sessions for offline development.</li>
+<li><strong>Student Dashboard Module</strong>: Aggregates academic and financial metrics. Reads from SQLAlchemy tables to output GPA, credits, attendance states, today's schedule events, and priority tasks.</li>
+<li><strong>Attendance Tracking Module</strong>: Implements the core attendance rules. It monitors attended versus skipped lectures, categorizing course attendance into three colored states:</li>
+<li><strong>Safe</strong> (Green): Attendance $\ge 85\%$</li>
+<li><strong>Warning</strong> (Yellow): $75\% \le \text{Attendance} &lt; 85\%$</li>
+<li><strong>Danger</strong> (Red): Attendance $&lt; 75\%$</li>
+<li><strong>Multi-Agent AI Chat Module</strong>: An routing script that selects the appropriate local model depending on query text. The router selects <strong>DeepSeek-Coder</strong> for code queries and <strong>Hermes</strong> for internship research and general questions.</li>
+<li><strong>RAG Document Service Module</strong>: Parses text uploads, splits documents into segments, and stores them in the database. During RAG queries, it pulls relevant snippets to inject into the LLM context.</li>
+<li><strong>Timetable Scheduler Module</strong>: Manages weekly classroom schedules, subject rooms, faculty assignments, and cancellation flags.</li>
+<li><strong>Finance Tracker Module</strong>: Logs student expenditures, maps them to categories (Food, Travel, Books), and monitors spending against the student's monthly budget.</li>
+<li><strong>Career and Placement Tracker Module</strong>: Tracks internship roles, company deadlines, and application phases, displaying conversion analytics to the student.</li>
+<li><strong>Assignment Manager Module</strong>: Organizes homework tasks by deadline and priority.</li>
+</ul>
+<h3>7.2 Database Design</h3>
+<p>The local SQLite schema consists of the following database tables:</p>
+<h4>Table 1: <code>users</code></h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Column Name</th>
+<th style="text-align: left;">Data Type</th>
+<th style="text-align: left;">Key Type</th>
+<th style="text-align: left;">Nullability</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Primary Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Unique student identifier</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>oauth_id</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">Unique Index</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">OAuth identifier from Google/GitHub</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>email</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">Unique Index</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Student institutional email address</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>name</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Display name of the student</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>avatar_url</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Profile image link</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>major</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Academic major</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>gpa</code></td>
+<td style="text-align: left;">FLOAT</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Current Cumulative GPA</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>skills</code></td>
+<td style="text-align: left;">JSON</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Array of skill strings (e.g. Python, SQL)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>experience</code></td>
+<td style="text-align: left;">TEXT</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Text description of student history</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>preferences</code></td>
+<td style="text-align: left;">JSON</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">UI settings (e.g., dark mode, notifications)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>is_new</code></td>
+<td style="text-align: left;">BOOLEAN</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Flags new users for onboarding walkthroughs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>created_at</code></td>
+<td style="text-align: left;">DATETIME</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Record creation timestamp</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>last_login</code></td>
+<td style="text-align: left;">DATETIME</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Last connection timestamp</td>
+</tr>
+</tbody>
+</table>
+<h4>Table 2: <code>chat_messages</code></h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Column Name</th>
+<th style="text-align: left;">Data Type</th>
+<th style="text-align: left;">Key Type</th>
+<th style="text-align: left;">Nullability</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Primary Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Unique message identifier</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>user_id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Foreign Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Reference to <code>users.id</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>topic</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Chat topic context</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>user_message</code></td>
+<td style="text-align: left;">TEXT</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Query input text</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ai_response</code></td>
+<td style="text-align: left;">TEXT</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Output response text</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>created_at</code></td>
+<td style="text-align: left;">DATETIME</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Time message was processed</td>
+</tr>
+</tbody>
+</table>
+<h4>Table 3: <code>mvp_course_attendance</code></h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Column Name</th>
+<th style="text-align: left;">Data Type</th>
+<th style="text-align: left;">Key Type</th>
+<th style="text-align: left;">Nullability</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Primary Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Record ID</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>user_id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Foreign Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Reference to <code>users.id</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>subject</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Name of the course</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>code</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Course code</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>professor</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Name of the instructor</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>attended</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Number of classes attended</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>total</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Total number of classes conducted</td>
+</tr>
+</tbody>
+</table>
+<h4>Table 4: <code>transactions</code></h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Column Name</th>
+<th style="text-align: left;">Data Type</th>
+<th style="text-align: left;">Key Type</th>
+<th style="text-align: left;">Nullability</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Primary Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Transaction identifier</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>user_id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Foreign Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Reference to <code>users.id</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>category</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Spending category (Food, Travel, etc.)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>amount</code></td>
+<td style="text-align: left;">FLOAT</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Amount spent</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>date</code></td>
+<td style="text-align: left;">DATETIME</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Transaction date</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>description</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Custom transaction details</td>
+</tr>
+</tbody>
+</table>
+<h4>Table 5: <code>mvp_assignments</code></h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Column Name</th>
+<th style="text-align: left;">Data Type</th>
+<th style="text-align: left;">Key Type</th>
+<th style="text-align: left;">Nullability</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Primary Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Assignment ID</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>user_id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Foreign Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Reference to <code>users.id</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>title</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Assignment title</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>subject</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Associated course name</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>type</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Category (coding, lab, written)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>priority</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Priority level (low, medium, high)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>status</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">State (pending, complete)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>due_at</code></td>
+<td style="text-align: left;">DATETIME</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Completion deadline</td>
+</tr>
+</tbody>
+</table>
+<h4>Table 6: <code>mvp_schedule_events</code></h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Column Name</th>
+<th style="text-align: left;">Data Type</th>
+<th style="text-align: left;">Key Type</th>
+<th style="text-align: left;">Nullability</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Primary Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Schedule event ID</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>user_id</code></td>
+<td style="text-align: left;">INTEGER</td>
+<td style="text-align: left;">Foreign Key</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Reference to <code>users.id</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>day</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Short day representation (Mon, Tue)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>date</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">ISO date string</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>subject</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Subject name</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>start_time</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Class start time</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>end_time</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">Class end time</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>room</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Room location</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>faculty</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NULL</td>
+<td style="text-align: left;">Instructor name</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>status</code></td>
+<td style="text-align: left;">VARCHAR</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">NOT NULL</td>
+<td style="text-align: left;">State (scheduled, cancelled)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>7.3 API and Process Design</h3>
+<p>The REST API is built using FastAPI. Key endpoints include:</p>
+<pre><code>[Student React client] 
+       │
+       ├── GET  /user/profile  ───────────► [Read Profile details]
+       ├── GET  /data/dashboard ──────────► [Calculate CGPA, Credits, Alerts]
+       ├── GET  /data/attendance ─────────► [Retrieve Course Bunk Budgets]
+       ├── GET  /data/schedule ───────────► [Get Weekly Timetable Classes]
+       ├── GET  /data/assignments ────────► [List Pending Academic Tasks]
+       ├── GET  /data/finance ────────────► [Check Expenditure Transactions]
+       ├── GET  /data/jobs ───────────────► [Match Job Listings by Skills]
+       │
+       ├── POST /agent/voice/command ─────► [Natural Language Voice Parser]
+       ├── POST /agent/chat/stream ───────► [Multi-Agent SSE LLM Generator]
+       └── POST /agent/rag/upload ────────► [Process Document text chunks]
+</code></pre>
+<h4>RAG Document Query Flow:</h4>
+<ol>
+<li><strong>Upload</strong>: A POST request to <code>/agent/rag/upload</code> takes a text file, splits it into paragraph chunks, and saves the text segments to the local database.</li>
+<li><strong>Context Search</strong>: When a chat request is processed, the system searches the stored segments for matches against the query.</li>
+<li><strong>Prompt Enrichment</strong>: Matching text segments are prepended to the system prompt as reference material, allowing Ollama to answer questions using the uploaded document's context.</li>
+</ol>
+<hr />
+<h3>7.4 Key Validation Rules</h3>
+<ul>
+<li><strong>VTU Minimum Attendance Requirement</strong>:</li>
+<li>$\text{Overall Percentage} \ge 85\% \implies$ <strong>Safe</strong></li>
+<li>$75\% \le \text{Overall Percentage} &lt; 85\% \implies$ <strong>Warning</strong></li>
+<li>$\text{Overall Percentage} &lt; 75\% \implies$ <strong>Danger</strong> (requires bunk recovery)</li>
+<li><strong>Safe Bunk Calculations</strong>:
+  If the student's current percentage is $\ge 75\%$, the budget calculates how many classes they can skip without falling below the threshold:
+  $$\text{Safe Bunks} = \text{Attended} - \lceil 0.75 \times \text{Total} \rceil$$
+  If the current percentage is $&lt; 75\%$, the budget is 0, and the recovery algorithm calculates the number of consecutive classes they must attend to restore their percentage:
+  $$\text{Required Classes} = \lceil 3 \times \text{Total} - 4 \times \text{Attended} \rceil$$</li>
+<li><strong>Multi-Agent Selection Rules</strong>:</li>
+<li>If query contains code patterns, program keywords, or coding requests: route to <strong>DeepSeek-Coder</strong> system prompt.</li>
+<li>If query contains company research, placement metrics, mock interviews, or resume questions: route to <strong>Hermes-2-Pro</strong> system prompt.</li>
+<li>Otherwise: route to <strong>Llama</strong> or <strong>Mistral</strong> for general chat.</li>
+<li><strong>Financial Budget Rules</strong>:</li>
+<li>Maximum monthly budget constraint: ₹7,000.</li>
+<li>Transactions that exceed the remaining balance trigger an immediate warning in the response payload.</li>
+</ul>
+<hr />
+<h2>8. ESTIMATION AND SCHEDULE</h2>
+<h3>8.1 Estimation Technique 1: Use Case Point (UCP)</h3>
+<p>To estimate project scope size, the UCP technique weights actors and use case complexities.</p>
+<h4>1. Actor Weights (UAW)</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Actor Type</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: center;">Weight</th>
+<th style="text-align: center;">Count</th>
+<th style="text-align: center;">Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Complex</strong></td>
+<td style="text-align: left;">Interactive React client &amp; Multi-Agent router.</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">9</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Average</strong></td>
+<td style="text-align: left;">External Google / GitHub OAuth callback APIs.</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Total Actor Weight (UAW)</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"><strong>13</strong></td>
+</tr>
+</tbody>
+</table>
+<h4>2. Use Case Weights (UUCW)</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Use Case</th>
+<th style="text-align: left;">Complexity</th>
+<th style="text-align: center;">Weight</th>
+<th style="text-align: center;">Count</th>
+<th style="text-align: center;">Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">OAuth login &amp; demo profile settings</td>
+<td style="text-align: left;">Simple</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;">Dashboard analytics, GPA, credits aggregation</td>
+<td style="text-align: left;">Average</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">Attendance tracking &amp; safe bunk computation</td>
+<td style="text-align: left;">Average</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">Timetable planner CRUD</td>
+<td style="text-align: left;">Average</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">Assignment prioritization manager</td>
+<td style="text-align: left;">Average</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">Smart voice command regex shortcut router</td>
+<td style="text-align: left;">Average</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">Expense logger &amp; budget tracker</td>
+<td style="text-align: left;">Average</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">Placement pipeline &amp; jobs scraper</td>
+<td style="text-align: left;">Average</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">local Ollama multi-agent setup &amp; streaming</td>
+<td style="text-align: left;">Complex</td>
+<td style="text-align: center;">15</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">15</td>
+</tr>
+<tr>
+<td style="text-align: left;">RAG document vector splitter &amp; search index</td>
+<td style="text-align: left;">Complex</td>
+<td style="text-align: center;">15</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">15</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Total Use Case Weight (UUCW)</strong></td>
+<td style="text-align: left;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"><strong>95</strong></td>
+</tr>
+</tbody>
+</table>
+<h4>3. Unadjusted Use Case Points (UUCP)</h4>
+<p>$$\text{UUCP} = \text{UAW} + \text{UUCW} = 13 + 95 = 108$$</p>
+<h4>4. Project Sizing</h4>
+<ul>
+<li><strong>Technical Complexity Factor (TCF)</strong>: Calculated as <strong>0.95</strong> due to real-time audio parsing, streaming response endpoints, and local GPU acceleration integrations.</li>
+<li><strong>Environmental Complexity Factor (ECF)</strong>: Calculated as <strong>0.88</strong> based on standard developer experience and existing framework capabilities.</li>
+<li><strong>Adjusted Use Case Points (UCP)</strong>:
+  $$\text{UCP} = \text{UUCP} \times \text{TCF} \times \text{ECF} = 108 \times 0.95 \times 0.88 = 90.288$$</li>
+<li><strong>Effort Sizing</strong>: Using a prototype productivity factor of 8 person-hours per Use Case Point:
+  $$\text{Effort} = 90.288 \text{ UCP} \times 8 \text{ hours/UCP} \approx 722 \text{ person-hours}$$</li>
+</ul>
+<hr />
+<h3>8.2 Estimation Technique 2: Bottom-up Work Breakdown</h3>
+<p>The bottom-up estimation aggregates time estimates for individual implementation modules.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Work Package Component</th>
+<th style="text-align: center;">Estimated Days</th>
+<th style="text-align: left;">Owner Focus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Requirements analysis, architecture definition, database design</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: left;">All</td>
+</tr>
+<tr>
+<td style="text-align: left;">Frontend navigation structure, styles configuration</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: left;">Frontend</td>
+</tr>
+<tr>
+<td style="text-align: left;">OAuth integrations, token management</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: left;">Backend</td>
+</tr>
+<tr>
+<td style="text-align: left;">Dashboard aggregation, attendance budget endpoints</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: left;">Backend</td>
+</tr>
+<tr>
+<td style="text-align: left;">Schedule CRUD and assignment manager API interfaces</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: left;">Backend</td>
+</tr>
+<tr>
+<td style="text-align: left;">Jobs board, placement statistics tracker</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: left;">Full Stack</td>
+</tr>
+<tr>
+<td style="text-align: left;">Local Ollama orchestrator, agent selection, token stream</td>
+<td style="text-align: center;">12</td>
+<td style="text-align: left;">Backend / AI</td>
+</tr>
+<tr>
+<td style="text-align: left;">RAG file indexer, SQLite search integration</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: left;">Backend / AI</td>
+</tr>
+<tr>
+<td style="text-align: left;">Integration verification, performance testing, bug fixes</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: left;">All</td>
+</tr>
+<tr>
+<td style="text-align: left;">Report creation, UML diagram compilation</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: left;">All</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Total Estimated Effort</strong></td>
+<td style="text-align: center;"><strong>84</strong></td>
+<td style="text-align: left;"><strong>84 person-days</strong></td>
+</tr>
+</tbody>
+</table>
+<p>With a 4-member student team working in parallel, the estimated calendar schedule is approximately <strong>3.5 to 4 weeks</strong>.</p>
+<hr />
+<h3>8.3 Time Line Chart</h3>
+<p>The development schedule is organized across an 8-week timeline:</p>
+<pre class="mermaid">gantt
+  title Student Catalyst Project Timeline (8-Week Schedule)
+  dateFormat  YYYY-MM-DD
+
+  section Phase 1: Planning
+  Requirements Analysis       :active, a1, 2026-06-01, 5d
+  UI Structure & Style Design : a2, after a1, 7d
+
+  section Phase 2: Core Stack
+  Auth, Session & DB Setup     : b1, after a2, 8d
+  Dashboard & Attendance Engine: b2, after b1, 10d
+
+  section Phase 3: Features
+  Schedule & Assignment APIs   : c1, after b2, 10d
+  Finance & Placement tracking : c2, after c1, 8d
+
+  section Phase 4: Local AI
+  Multi-Agent LLM Routing      : d1, after c2, 12d
+  RAG Indexer & Context Search : d2, after d1, 8d
+
+  section Phase 5: QA
+  System Integration & Fixes   : e1, after d2, 9d
+  Report & UML Finalization    : e2, after e1, 7d
+</pre>
+<hr />
+<h2>9. TEST CASES</h2>
+<p>The test suite covers user authorization, dashboard analytics, attendance warnings, local AI agent routing, RAG text processing, and fallback behaviors.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Test Scenario</th>
+<th style="text-align: left;">Input / Precondition</th>
+<th style="text-align: left;">Expected Output / Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-01</strong></td>
+<td style="text-align: left;">Demo Login Bypass</td>
+<td style="text-align: left;">POST request to <code>/auth/demo</code> with test email address.</td>
+<td style="text-align: left;">Creates user profile in SQLite and returns valid JWT access token.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-02</strong></td>
+<td style="text-align: left;">Google Token Auth</td>
+<td style="text-align: left;">POST request to <code>/auth/google</code> containing token payload.</td>
+<td style="text-align: left;">Validates token against OAuth API and returns authenticated user session.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-03</strong></td>
+<td style="text-align: left;">Dashboard Analytics aggregation</td>
+<td style="text-align: left;">GET request to <code>/data/dashboard</code> with active JWT.</td>
+<td style="text-align: left;">Returns current CGPA, total credits, upcoming tasks, and weekly classes.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-04</strong></td>
+<td style="text-align: left;">Attendance safe bunk calculation</td>
+<td style="text-align: left;">GET request to <code>/data/attendance</code> with database course metrics.</td>
+<td style="text-align: left;">Calculates safe skip counts and highlights status (Safe/Warning/Danger).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-05</strong></td>
+<td style="text-align: left;">CRUD Timetable modification</td>
+<td style="text-align: left;">PUT request to <code>/data/schedule/{id}</code> with new class room details.</td>
+<td style="text-align: left;">Saves updated schedule details and resolves scheduling conflicts.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-06</strong></td>
+<td style="text-align: left;">Task Priority tracking</td>
+<td style="text-align: left;">POST request to <code>/data/assignments</code> with high-urgency task.</td>
+<td style="text-align: left;">Creates assignment, lists by deadline, and sets priority to high.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-07</strong></td>
+<td style="text-align: left;">Budget limit check</td>
+<td style="text-align: left;">POST request to <code>/data/finance</code> with transaction exceeding monthly budget.</td>
+<td style="text-align: left;">Saves transaction and returns budget alert in response.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-08</strong></td>
+<td style="text-align: left;">Job matching filtering</td>
+<td style="text-align: left;">GET request to <code>/data/jobs</code> with keyword "Python".</td>
+<td style="text-align: left;">Returns relevant job openings that match the student's profile skills.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-09</strong></td>
+<td style="text-align: left;">Basic voice navigation shortcut</td>
+<td style="text-align: left;">POST request to <code>/agent/voice/command</code> with text "Open timetable".</td>
+<td style="text-align: left;">Returns HTTP 200 with direct routing action for timetable view.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-10</strong></td>
+<td style="text-align: left;">Voice query agent selection</td>
+<td style="text-align: left;">POST request to <code>/agent/voice/command</code> with text "Find coding roles".</td>
+<td style="text-align: left;">Identifies query intent and routes to Hermes Career Agent.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-11</strong></td>
+<td style="text-align: left;">RAG Document processing</td>
+<td style="text-align: left;">POST request to <code>/agent/rag/upload</code> containing course text file.</td>
+<td style="text-align: left;">Parses text file, splits into segments, and saves to database.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-12</strong></td>
+<td style="text-align: left;">Contextual RAG search chat</td>
+<td style="text-align: left;">POST request to <code>/agent/chat/stream</code> with question about uploaded document.</td>
+<td style="text-align: left;">Retrieves relevant text segments, passes to LLM, and streams answer.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-13</strong></td>
+<td style="text-align: left;">Local LLM fallback behavior</td>
+<td style="text-align: left;">POST request to <code>/agent/chat/stream</code> when Ollama server is offline.</td>
+<td style="text-align: left;">LLM client catches connection error and returns a pre-cached mock response.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-14</strong></td>
+<td style="text-align: left;">Get RAG indexed documents listing</td>
+<td style="text-align: left;">GET request to <code>/agent/rag/documents</code> with valid JWT.</td>
+<td style="text-align: left;">Returns list of filenames and sizes of all indexed RAG documents.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-15</strong></td>
+<td style="text-align: left;">Delete RAG indexed document</td>
+<td style="text-align: left;">DELETE request to <code>/agent/rag/document/{filename}</code>.</td>
+<td style="text-align: left;">Removes text segments from DB index and deletes references (HTTP 200).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-16</strong></td>
+<td style="text-align: left;">Add new schedule timetable event</td>
+<td style="text-align: left;">POST request to <code>/data/schedule</code> with timetable event JSON body.</td>
+<td style="text-align: left;">Stores schedule event in DB and returns the generated class ID.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-17</strong></td>
+<td style="text-align: left;">Delete schedule event</td>
+<td style="text-align: left;">DELETE request to <code>/data/schedule/{id}</code>.</td>
+<td style="text-align: left;">Removes target event from DB schedule, returns status success.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-18</strong></td>
+<td style="text-align: left;">Complete assignment status toggle</td>
+<td style="text-align: left;">PUT request to <code>/data/assignments/{id}</code> with status "completed".</td>
+<td style="text-align: left;">Marks assignment task complete, removing it from pending priorities.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-19</strong></td>
+<td style="text-align: left;">Delete assignment record</td>
+<td style="text-align: left;">DELETE request to <code>/data/assignments/{id}</code>.</td>
+<td style="text-align: left;">Deletes assignment entry from DB, returns success confirmation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-20</strong></td>
+<td style="text-align: left;">Log manual attendance update</td>
+<td style="text-align: left;">POST request to <code>/data/attendance</code> with course code and status.</td>
+<td style="text-align: left;">Increments attended/total lectures fields and updates warnings.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-21</strong></td>
+<td style="text-align: left;">Configure monthly expenditure limit</td>
+<td style="text-align: left;">POST request to <code>/data/finance/budget</code> with amount payload.</td>
+<td style="text-align: left;">Updates user spending constraints, returning updated budget calculations.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-22</strong></td>
+<td style="text-align: left;">Edit financial transaction entry</td>
+<td style="text-align: left;">PUT request to <code>/data/finance/{id}</code> with modified spending values.</td>
+<td style="text-align: left;">Updates transaction details, recalculating category breakdown.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-23</strong></td>
+<td style="text-align: left;">Delete financial transaction</td>
+<td style="text-align: left;">DELETE request to <code>/data/finance/{id}</code>.</td>
+<td style="text-align: left;">Removes expense, restoring monthly budget remaining balance.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-24</strong></td>
+<td style="text-align: left;">Voice speech transcription</td>
+<td style="text-align: left;">POST request to <code>/agent/voice/transcribe</code> with WAV audio file.</td>
+<td style="text-align: left;">Transcribes speech using text parser and returns transcribing string.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-25</strong></td>
+<td style="text-align: left;">Fetch historical chat logs</td>
+<td style="text-align: left;">GET request to <code>/agent/chat/history</code> with valid token.</td>
+<td style="text-align: left;">Returns chronological query and response records from <code>chat_messages</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>10. CONCLUSION</h2>
+<p><strong>Student Catalyst</strong> provides a unified academic dashboard and offline AI assistant for university students. By centralizing key variables—such as attendance percentage tracking, assignment priority lists, career placement pipelines, expense budgets, and weekly timetables—it helps students manage their academic responsibilities.</p>
+<p>From a software engineering perspective, the project demonstrates structured implementation practices. The application separates concerns between a React/Expo user interface, a FastAPI backend, and local storage. By using local LLM integration via Ollama, it provides specialized AI agents without requiring external cloud connections. The multi-layered fallback strategy ensures that core dashboard utilities remain operational even if local hardware acceleration is offline. This report aligns the project's technical architecture, database schemas, API routes, UML diagrams, development schedule, and test procedures with standard software engineering practices.</p>
+        </div>
+
+    </div>
+
+    <!-- Load Mermaid JS from CDN for browser rendering -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            securityLevel: 'loose',
+            gantt: {
+                useWidth: 900
+            }
+        });
+    </script>
+</body>
+</html>

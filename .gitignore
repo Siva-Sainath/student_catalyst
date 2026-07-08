@@ -66,3 +66,30 @@ coverage/
 
 # Cache
 .cache/
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# Expo
+.expo/
+
+# Large binary/document files
+*.pdf
+*.docx
+*.pptx
+*.xlsx
+
+# Python script artifacts
+generate_ppt.py
+
+# Package lock files (keep package.json, skip lock files for cleanliness)
+# package-lock.json  # kept for reproducible installs
+
+# Backend uploaded documents directory
+mac-backend/documents/
+
+# Original images / screenshots not needed for source
+original_images/
+screenshots/

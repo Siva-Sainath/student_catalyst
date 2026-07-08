@@ -1,5 +1,11 @@
 /**
- * Voice service - voice command execution.
+ * Voice service — transcription via local Whisper + command execution.
+ *
+ * Flow:
+ *   MediaRecorder (WebM/Opus blob)
+ *     → POST /agent/voice/transcribe  (faster-whisper, 100% local)
+ *     → text
+ *     → POST /agent/voice/command/enhanced (NLP routing)
  */
 
 import ApiClient from "./apiClient";
@@ -11,33 +17,62 @@ export interface VoiceCommandResult {
   route?: string | null;
 }
 
-// Timeout for voice commands (10 seconds)
-const VOICE_COMMAND_TIMEOUT = 10000;
+export interface TranscribeResult {
+  text: string;
+  duration?: number;
+}
+
+// Timeout: 30 s to give Whisper plenty of room on first-run model load
+const TRANSCRIBE_TIMEOUT = 30_000;
+const COMMAND_TIMEOUT = 10_000;
 
 export class VoiceService {
   /**
-   * Execute voice command with timeout.
+   * Send an audio Blob to the backend Whisper endpoint and return the transcript.
+   */
+  static async transcribeAudio(blob: Blob): Promise<TranscribeResult> {
+    const form = new FormData();
+    // Give it a name so the server can detect the extension
+    const ext = blob.type.includes("ogg") ? "ogg" : "webm";
+    form.append("file", blob, `recording.${ext}`);
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Whisper transcription timed out (30 s).")),
+        TRANSCRIBE_TIMEOUT
+      )
+    );
+
+    const fetchPromise = ApiClient.postFormData("/agent/voice/transcribe", form);
+
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
+    if (!response.ok) {
+      throw new Error(response.error || "Transcription failed");
+    }
+    return response.data as TranscribeResult;
+  }
+
+  /**
+   * Execute a voice command string through the NLP routing pipeline.
    */
   static async executeCommand(text: string): Promise<VoiceCommandResult> {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error("Voice command timed out. Please try again."));
-      }, VOICE_COMMAND_TIMEOUT);
-    });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Voice command timed out. Please try again.")),
+        COMMAND_TIMEOUT
+      )
+    );
 
-    try {
-      const responsePromise = ApiClient.executeVoiceCommand(text);
-      const response = await Promise.race([responsePromise, timeoutPromise]);
+    const response = await Promise.race([
+      ApiClient.executeVoiceCommand(text),
+      timeoutPromise,
+    ]);
 
-      if (!response.ok) {
-        throw new Error(response.error || "Failed to execute voice command");
-      }
-
-      return response.data as VoiceCommandResult;
-    } catch (error) {
-      // Return a default response for unknown commands if there's an error
-      throw error;
+    if (!response.ok) {
+      throw new Error(response.error || "Failed to execute voice command");
     }
+
+    return response.data as VoiceCommandResult;
   }
 }
 

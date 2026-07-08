@@ -7,6 +7,7 @@ import {
   Grid3X3,
 } from "lucide-react";
 import { VoiceFab } from "./VoiceFab";
+import { VoiceControlProvider } from "../context/VoiceControlContext";
 
 const tabs = [
   { path: "/", label: "Home", icon: Home },
@@ -26,6 +27,7 @@ export function Layout() {
   };
 
   return (
+    <VoiceControlProvider>
     <div
       className="flex flex-col h-screen w-full max-w-[430px] mx-auto overflow-hidden"
       style={{ background: "#050e1d" }}
@@ -139,5 +141,6 @@ export function Layout() {
         </div>
       </div>
     </div>
+    </VoiceControlProvider>
   );
 }
